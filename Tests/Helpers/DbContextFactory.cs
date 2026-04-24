@@ -1,5 +1,6 @@
 using netcore_api_rbac_starter.Entities;
 using netcore_api_rbac_starter.Data;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 
 namespace netcore_api_rbac_starter.Tests.Helpers;
@@ -14,6 +15,7 @@ public static class DbContextFactory
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase(dbName ?? Guid.NewGuid().ToString())
+            .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
             .Options;
 
         var ctx = new AppDbContext(options);
