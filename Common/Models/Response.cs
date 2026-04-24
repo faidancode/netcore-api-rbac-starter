@@ -1,9 +1,17 @@
 namespace netcore_api_rbac_starter.Common.Models;
 
-public class PaginatedResponse<T>
+public class Response<T>
 {
-    public IEnumerable<T> Data { get; set; } = Enumerable.Empty<T>();
-    public PaginationMeta Meta { get; set; } = new();
+    public bool Success { get; set; }
+    public string? Message { get; set; }
+    public T? Data { get; set; }
+    public PaginationMeta? Meta { get; set; }
+
+    public static Response<T> Ok(T? data, string? message = null, PaginationMeta? meta = null)
+        => new() { Success = true, Data = data, Message = message, Meta = meta };
+
+    public static Response<T> Fail(string message)
+        => new() { Success = false, Message = message };
 }
 
 public class PaginationMeta

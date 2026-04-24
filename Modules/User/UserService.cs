@@ -1,6 +1,8 @@
 using netcore_api_rbac_starter.Common.Exceptions;
+using netcore_api_rbac_starter.Common.Extensions;
 using netcore_api_rbac_starter.Entities;
 using netcore_api_rbac_starter.Data;
+using netcore_api_rbac_starter.Common.Models;
 using netcore_api_rbac_starter.Modules.Users.Dtos;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,6 +12,7 @@ public interface IUsersService
 {
     Task<UserDto> CreateAsync(CreateUserRequest request);
     Task<IEnumerable<UserDto>> GetAllAsync();
+    Task<PagedResult<UserDto>> GetPagedAsync(int page, int limit);
     Task<UserDto> GetByIdAsync(Guid id);
     Task<UserDto> UpdateAsync(Guid id, UpdateUserRequest request);
     Task DeleteAsync(Guid id);
@@ -59,6 +62,28 @@ public class UsersService : IUsersService
             .OrderBy(u => u.Name)
             .Select(u => MapToDto(u))
             .ToListAsync();
+    }
+
+    public async Task<PagedResult<UserDto>> GetPagedAsync(int page, int limit)
+    {
+        page = page < 1 ? 1 : page;
+        limit = limit < 1 ? 10 : Math.Min(limit, 100);
+
+        var query = _db.Users
+            .Include(u => u.Role)
+            .OrderBy(u => u.Name);
+
+        var total = await query.CountAsync();
+        var items = await query
+            .ApplyPagination(page, limit)
+            .Select(u => MapToDto(u))
+            .ToListAsync();
+
+        return new PagedResult<UserDto>
+        {
+            Items = items,
+            Total = total
+        };
     }
 
     public async Task<UserDto> GetByIdAsync(Guid id)

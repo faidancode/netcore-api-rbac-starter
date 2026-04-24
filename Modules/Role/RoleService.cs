@@ -1,6 +1,8 @@
 using netcore_api_rbac_starter.Common.Exceptions;
+using netcore_api_rbac_starter.Common.Extensions;
 using netcore_api_rbac_starter.Entities;
 using netcore_api_rbac_starter.Data;
+using netcore_api_rbac_starter.Common.Models;
 using netcore_api_rbac_starter.Modules.Auth.Dtos;
 using netcore_api_rbac_starter.Modules.Roles.Dtos;
 using Microsoft.EntityFrameworkCore;
@@ -11,6 +13,7 @@ public interface IRolesService
 {
     Task<RoleDto> CreateAsync(CreateRoleRequest request);
     Task<IEnumerable<RoleDto>> GetAllAsync();
+    Task<PagedResult<RoleDto>> GetPagedAsync(int page, int limit);
     Task<RoleDto> GetByIdAsync(Guid id);
     Task<RoleDto> UpdateAsync(Guid id, UpdateRoleRequest request);
     Task DeleteAsync(Guid id);
@@ -47,6 +50,27 @@ public class RolesService : IRolesService
             .ToListAsync();
 
         return roles.Select(MapToDto);
+    }
+
+    public async Task<PagedResult<RoleDto>> GetPagedAsync(int page, int limit)
+    {
+        page = page < 1 ? 1 : page;
+        limit = limit < 1 ? 10 : Math.Min(limit, 100);
+
+        var query = _db.Roles
+            .Include(r => r.RolePermissions).ThenInclude(rp => rp.Permission)
+            .OrderBy(r => r.Name);
+
+        var total = await query.CountAsync();
+        var items = await query
+            .ApplyPagination(page, limit)
+            .ToListAsync();
+
+        return new PagedResult<RoleDto>
+        {
+            Items = items.Select(MapToDto).ToList(),
+            Total = total
+        };
     }
 
     public async Task<RoleDto> GetByIdAsync(Guid id)

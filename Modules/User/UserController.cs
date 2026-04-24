@@ -21,42 +21,45 @@ public class UsersController : ControllerBase
 
     [HttpPost]
     [HasPermission("create", "User")]
-    public async Task<ActionResult<ApiResponse<UserDto>>> Create([FromBody] CreateUserRequest request)
+    public async Task<ActionResult<Response<UserDto>>> Create([FromBody] CreateUserRequest request)
     {
         var result = await _usersService.CreateAsync(request);
         return CreatedAtAction(nameof(GetById), new { id = result.Id },
-            ApiResponse<UserDto>.Ok(result, "User created successfully."));
+            Response<UserDto>.Ok(result, "User created successfully."));
     }
 
     [HttpGet]
     [HasPermission("read", "User")]
-    public async Task<ActionResult<ApiResponse<IEnumerable<UserDto>>>> GetAll()
+    public async Task<ActionResult<Response<IEnumerable<UserDto>>>> GetAll([FromQuery] int page = 1, [FromQuery] int limit = 10)
     {
-        var result = await _usersService.GetAllAsync();
-        return Ok(ApiResponse<IEnumerable<UserDto>>.Ok(result));
+        page = page < 1 ? 1 : page;
+        limit = limit < 1 ? 10 : Math.Min(limit, 100);
+
+        var result = await _usersService.GetPagedAsync(page, limit);
+        return Ok(Response<IEnumerable<UserDto>>.Ok(result.Items, meta: PaginationMeta.Create(page, limit, result.Total)));
     }
 
     [HttpGet("{id:guid}")]
     [HasPermission("read", "User")]
-    public async Task<ActionResult<ApiResponse<UserDto>>> GetById(Guid id)
+    public async Task<ActionResult<Response<UserDto>>> GetById(Guid id)
     {
         var result = await _usersService.GetByIdAsync(id);
-        return Ok(ApiResponse<UserDto>.Ok(result));
+        return Ok(Response<UserDto>.Ok(result));
     }
 
     [HttpPatch("{id:guid}")]
     [HasPermission("update", "User")]
-    public async Task<ActionResult<ApiResponse<UserDto>>> Update(Guid id, [FromBody] UpdateUserRequest request)
+    public async Task<ActionResult<Response<UserDto>>> Update(Guid id, [FromBody] UpdateUserRequest request)
     {
         var result = await _usersService.UpdateAsync(id, request);
-        return Ok(ApiResponse<UserDto>.Ok(result, "User updated successfully."));
+        return Ok(Response<UserDto>.Ok(result, "User updated successfully."));
     }
 
     [HttpDelete("{id:guid}")]
     [HasPermission("delete", "User")]
-    public async Task<ActionResult<ApiResponse>> Delete(Guid id)
+    public async Task<ActionResult<Response<object?>>> Delete(Guid id)
     {
         await _usersService.DeleteAsync(id);
-        return Ok(ApiResponse.Ok("User deleted successfully."));
+        return Ok(Response<object?>.Ok(null, "User deleted successfully."));
     }
 }

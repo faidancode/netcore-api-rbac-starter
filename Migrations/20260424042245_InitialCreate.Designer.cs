@@ -60,8 +60,6 @@ namespace netcore_api_rbac_starter.Migrations
                         .HasDatabaseName("IX_departments_name")
                         .HasFilter("is_deleted = false");
 
-                    b.HasQueryFilter(d => !d.IsDeleted);
-
                     b.ToTable("departments");
                 });
 
@@ -164,8 +162,6 @@ namespace netcore_api_rbac_starter.Migrations
                         .HasDatabaseName("IX_employees_user_id")
                         .HasFilter("user_id IS NOT NULL AND is_deleted = false");
 
-                    b.HasQueryFilter(e => !e.IsDeleted);
-
                     b.ToTable("employees");
                 });
 
@@ -221,8 +217,6 @@ namespace netcore_api_rbac_starter.Migrations
                         .HasDatabaseName("IX_permissions_action_subject")
                         .HasFilter("is_deleted = false");
 
-                    b.HasQueryFilter(p => !p.IsDeleted);
-
                     b.ToTable("permissions");
                 });
 
@@ -271,8 +265,6 @@ namespace netcore_api_rbac_starter.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_positions_department_id_name")
                         .HasFilter("is_deleted = false");
-
-                    b.HasQueryFilter(p => !p.IsDeleted);
 
                     b.ToTable("positions");
                 });
@@ -361,8 +353,6 @@ namespace netcore_api_rbac_starter.Migrations
                         .HasDatabaseName("IX_roles_name")
                         .HasFilter("is_deleted = false");
 
-                    b.HasQueryFilter(r => !r.IsDeleted);
-
                     b.ToTable("roles");
                 });
 
@@ -444,8 +434,6 @@ namespace netcore_api_rbac_starter.Migrations
 
                     b.HasIndex("RoleId")
                         .HasDatabaseName("IX_users_role_id");
-
-                    b.HasQueryFilter(u => !u.IsDeleted);
 
                     b.ToTable("users");
                 });

@@ -21,52 +21,55 @@ public class RolesController : ControllerBase
 
     [HttpPost]
     [HasPermission("create", "Role")]
-    public async Task<ActionResult<ApiResponse<RoleDto>>> Create([FromBody] CreateRoleRequest request)
+    public async Task<ActionResult<Response<RoleDto>>> Create([FromBody] CreateRoleRequest request)
     {
         var result = await _rolesService.CreateAsync(request);
         return CreatedAtAction(nameof(GetById), new { id = result.Id },
-            ApiResponse<RoleDto>.Ok(result, "Role created successfully."));
+            Response<RoleDto>.Ok(result, "Role created successfully."));
     }
 
     [HttpGet]
     [HasPermission("read", "Role")]
-    public async Task<ActionResult<ApiResponse<IEnumerable<RoleDto>>>> GetAll()
+    public async Task<ActionResult<Response<IEnumerable<RoleDto>>>> GetAll([FromQuery] int page = 1, [FromQuery] int limit = 10)
     {
-        var result = await _rolesService.GetAllAsync();
-        return Ok(ApiResponse<IEnumerable<RoleDto>>.Ok(result));
+        page = page < 1 ? 1 : page;
+        limit = limit < 1 ? 10 : Math.Min(limit, 100);
+
+        var result = await _rolesService.GetPagedAsync(page, limit);
+        return Ok(Response<IEnumerable<RoleDto>>.Ok(result.Items, meta: PaginationMeta.Create(page, limit, result.Total)));
     }
 
     [HttpGet("{id:guid}")]
     [HasPermission("read", "Role")]
-    public async Task<ActionResult<ApiResponse<RoleDto>>> GetById(Guid id)
+    public async Task<ActionResult<Response<RoleDto>>> GetById(Guid id)
     {
         var result = await _rolesService.GetByIdAsync(id);
-        return Ok(ApiResponse<RoleDto>.Ok(result));
+        return Ok(Response<RoleDto>.Ok(result));
     }
 
     [HttpPatch("{id:guid}")]
     [HasPermission("update", "Role")]
-    public async Task<ActionResult<ApiResponse<RoleDto>>> Update(Guid id, [FromBody] UpdateRoleRequest request)
+    public async Task<ActionResult<Response<RoleDto>>> Update(Guid id, [FromBody] UpdateRoleRequest request)
     {
         var result = await _rolesService.UpdateAsync(id, request);
-        return Ok(ApiResponse<RoleDto>.Ok(result, "Role updated successfully."));
+        return Ok(Response<RoleDto>.Ok(result, "Role updated successfully."));
     }
 
     [HttpDelete("{id:guid}")]
     [HasPermission("delete", "Role")]
-    public async Task<ActionResult<ApiResponse>> Delete(Guid id)
+    public async Task<ActionResult<Response<object?>>> Delete(Guid id)
     {
         await _rolesService.DeleteAsync(id);
-        return Ok(ApiResponse.Ok("Role deleted successfully."));
+        return Ok(Response<object?>.Ok(null, "Role deleted successfully."));
     }
 
     [HttpPost("{id:guid}/permissions")]
     [HasPermission("update", "Role")]
-    public async Task<ActionResult<ApiResponse<RoleDto>>> AssignPermissions(
+    public async Task<ActionResult<Response<RoleDto>>> AssignPermissions(
         Guid id,
         [FromBody] AssignPermissionsRequest request)
     {
         var result = await _rolesService.AssignPermissionsAsync(id, request);
-        return Ok(ApiResponse<RoleDto>.Ok(result, "Permissions assigned successfully."));
+        return Ok(Response<RoleDto>.Ok(result, "Permissions assigned successfully."));
     }
 }
