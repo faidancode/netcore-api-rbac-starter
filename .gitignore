@@ -5,6 +5,8 @@
 
 # dotenv files
 .env
+.dotnet/
+.nuget-feed/
 
 # User-specific files
 *.rsuser

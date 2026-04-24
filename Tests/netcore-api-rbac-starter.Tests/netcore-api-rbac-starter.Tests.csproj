@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>netcore_api_rbac_starter.Tests</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <RestoreIgnoreFailedSources>true</RestoreIgnoreFailedSources>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="FluentAssertions" Version="8.9.0" />
+    <PackageReference Include="BCrypt.Net-Next" Version="4.1.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.7" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.7" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.7" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.7" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.4.0" />
+    <PackageReference Include="Moq" Version="4.20.72" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\netcore-api-rbac-starter.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Helpers\**\*.cs" />
+    <Compile Include="..\Unit\**\*.cs" />
+  </ItemGroup>
+
+</Project>
