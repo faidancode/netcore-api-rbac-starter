@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "okM6D4NZhnU=",
+  "success": true,
+  "projectFilePath": "D:\\Coding\\Portfolio\\netcore\\netcore-api-rbac-starter\\netcore-api-rbac-starter.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\RIFAIDEV\\.nuget\\packages\\microsoft.aspnetcore.openapi\\10.0.7\\microsoft.aspnetcore.openapi.10.0.7.nupkg.sha512",
+    "C:\\Users\\RIFAIDEV\\.nuget\\packages\\microsoft.openapi\\2.0.0\\microsoft.openapi.2.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}

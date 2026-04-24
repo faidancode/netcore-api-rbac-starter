@@ -1,0 +1,6 @@
+@netcore_api_rbac_starter_HostAddress = http://localhost:5026
+
+GET {{netcore_api_rbac_starter_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
