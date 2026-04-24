@@ -12,4 +12,7 @@ public static class AppBootstrap
 
     public static bool IsSeedCommand(string[] args)
         => args.Any(a => string.Equals(a, "--seed", StringComparison.OrdinalIgnoreCase));
+
+    public static bool IsMigrateCommand(string[] args)
+        => args.Any(a => string.Equals(a, "--migrate", StringComparison.OrdinalIgnoreCase));
 }
