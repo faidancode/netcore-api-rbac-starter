@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("netcore-api-rbac-starter")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1fc5dba2381494f515335108b542536742121146")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b1d1fe4a03567f379edd5069a25a3a8c5638de50")]
 [assembly: System.Reflection.AssemblyProductAttribute("netcore-api-rbac-starter")]
 [assembly: System.Reflection.AssemblyTitleAttribute("netcore-api-rbac-starter")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
