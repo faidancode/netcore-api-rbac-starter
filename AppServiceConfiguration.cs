@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using netcore_api_rbac_starter.Data;
 using netcore_api_rbac_starter.Modules.Auth;
 using netcore_api_rbac_starter.Modules.Departments;
+using netcore_api_rbac_starter.Modules.Positions;
 using netcore_api_rbac_starter.Modules.Roles;
 using netcore_api_rbac_starter.Modules.Users;
 using netcore_api_rbac_starter.Security;
@@ -26,6 +27,7 @@ public static class AppServiceConfiguration
         builder.Services.AddScoped<IRolesService, RolesService>();
         builder.Services.AddScoped<IAuthService, AuthService>();
         builder.Services.AddScoped<IDepartmentsService, DepartmentsService>();
+        builder.Services.AddScoped<IPositionsService, PositionsService>();
         builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
         builder.Services.AddScoped<IJwtService, JwtService>();
 
