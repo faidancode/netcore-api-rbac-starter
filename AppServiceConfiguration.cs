@@ -17,40 +17,61 @@ public static class AppServiceConfiguration
 {
     public static WebApplicationBuilder AddAppServices(this WebApplicationBuilder builder)
     {
-        builder.Services.AddOpenApi();
-        builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen();
-        builder.Services.AddControllers();
-        builder.Services.AddHttpContextAccessor();
+        var services = builder.Services;
+        var config = builder.Configuration;
+        var env = builder.Environment;
 
-        builder.Services.AddScoped<IUsersService, UsersService>();
-        builder.Services.AddScoped<IRolesService, RolesService>();
-        builder.Services.AddScoped<IAuthService, AuthService>();
-        builder.Services.AddScoped<IDepartmentsService, DepartmentsService>();
-        builder.Services.AddScoped<IPositionsService, PositionsService>();
-        builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
-        builder.Services.AddScoped<IJwtService, JwtService>();
+        services.AddOpenApi();
+        services.AddEndpointsApiExplorer();
+        services.AddSwaggerGen();
+        services.AddControllers();
+        services.AddHttpContextAccessor();
 
-        builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
-        builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
-        builder.Services.AddAuthorization();
+        // Services
+        services.AddScoped<IUsersService, UsersService>();
+        services.AddScoped<IRolesService, RolesService>();
+        services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IDepartmentsService, DepartmentsService>();
+        services.AddScoped<IPositionsService, PositionsService>();
+        services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddScoped<IJwtService, JwtService>();
 
-        builder.Services.AddDbContext<AppDbContext>(options =>
-            options.UseNpgsql(builder.Configuration.GetConnectionString("Default"))
-        );
+        // Authorization
+        services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+        services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
+        services.AddAuthorization();
 
-        var jwtSection = builder.Configuration.GetSection("Jwt");
-        var jwtSecret = jwtSection["Secret"]
-            ?? throw new InvalidOperationException("Missing configuration value: Jwt:Secret");
+        // ✅ DATABASE (clean & standard)
+        if (env.IsEnvironment("Testing"))
+        {
+            services.AddDbContext<AppDbContext>(opt =>
+                opt.UseInMemoryDatabase("TestDb"));
+        }
+        else
+        {
+            services.AddDbContext<AppDbContext>(opt =>
+                opt.UseNpgsql(config.GetConnectionString("Default")));
+        }
 
-        builder.Services
+        // ✅ JWT Options (clean)
+        services.Configure<JwtOptions>(config.GetSection("Jwt"));
+
+        services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
+                var jwtSection = config.GetSection("Jwt");
+                var jwtSecret = jwtSection["Secret"];
+
+                if (string.IsNullOrEmpty(jwtSecret))
+                    throw new InvalidOperationException("Missing configuration value: Jwt:Secret");
+
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(jwtSecret)
+                    ),
                     ValidateIssuer = true,
                     ValidIssuer = jwtSection["Issuer"],
                     ValidateAudience = true,
