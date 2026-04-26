@@ -114,39 +114,43 @@ public class RolesService : IRolesService
 
     public async Task<RoleDto> AssignPermissionsAsync(Guid id, AssignPermissionsRequest request)
     {
+        // 1. Fetch Role (Throws 404 if not found)
         var role = await _db.Roles
             .Include(r => r.RolePermissions)
             .FirstOrDefaultAsync(r => r.Id == id)
             ?? throw new NotFoundException("Role", id);
 
-        // Validate all permission IDs exist
-        var permissionIds = request.PermissionIds.ToList();
+        var permissionIds = request.PermissionIds.Distinct().ToList();
+
+        // 2. Validate Permissions (Ensures 404 if any ID is "Unknown")
         if (permissionIds.Any())
         {
             var existingCount = await _db.Permissions
                 .CountAsync(p => permissionIds.Contains(p.Id));
 
             if (existingCount != permissionIds.Count)
-                throw new NotFoundException("One or more permissions not found.");
+            {
+                // We use a generic ID label to satisfy the exception constructor
+                throw new NotFoundException("Permission", "provided list");
+            }
         }
 
-        // Clear existing and replace (transactional)
-        await using var transaction = await _db.Database.BeginTransactionAsync();
-
+        // 3. Clear and Update
         _db.RolePermissions.RemoveRange(role.RolePermissions);
-        await _db.SaveChangesAsync();
 
-        foreach (var permId in permissionIds)
+        if (permissionIds.Any())
         {
-            _db.RolePermissions.Add(new RolePermission
+            var newPermissions = permissionIds.Select(permId => new RolePermission
             {
                 RoleId = id,
                 PermissionId = permId
             });
+
+            await _db.RolePermissions.AddRangeAsync(newPermissions);
         }
 
+        // 4. Atomic Save
         await _db.SaveChangesAsync();
-        await transaction.CommitAsync();
 
         return await GetByIdAsync(id);
     }
