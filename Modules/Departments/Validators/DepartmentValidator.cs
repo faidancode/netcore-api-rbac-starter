@@ -8,12 +8,12 @@ public class CreateDepartmentRequestValidator : AbstractValidator<CreateDepartme
     public CreateDepartmentRequestValidator()
     {
         RuleFor(x => x.Name)
-            .NotEmpty().WithMessage("Department name is required.")
-            .MaximumLength(200).WithMessage("Name must not exceed 200 characters.");
+     .NotEmpty().WithMessage("Department name is required.")
+     .MinimumLength(3).WithMessage("Name must be at least 3 characters.")
+     .MaximumLength(200).WithMessage("Name must not exceed 200 characters.");
 
         RuleFor(x => x.Description)
-            .MaximumLength(500).WithMessage("Description must not exceed 500 characters.")
-            .When(x => x.Description != null);
+            .MaximumLength(500).WithMessage("Description must not exceed 500 characters.");
     }
 }
 
@@ -22,11 +22,11 @@ public class UpdateDepartmentRequestValidator : AbstractValidator<UpdateDepartme
     public UpdateDepartmentRequestValidator()
     {
         RuleFor(x => x.Name)
-            .MaximumLength(200).WithMessage("Name must not exceed 200 characters.")
-            .When(x => x.Name != null);
+    .MinimumLength(3).WithMessage("Name must be at least 3 characters.")
+    .MaximumLength(200).WithMessage("Name must not exceed 200 characters.")
+    .When(x => x.Name != null);
 
         RuleFor(x => x.Description)
-            .MaximumLength(500).WithMessage("Description must not exceed 500 characters.")
-            .When(x => x.Description != null);
+            .MaximumLength(500).WithMessage("Description must not exceed 500 characters.");
     }
 }
