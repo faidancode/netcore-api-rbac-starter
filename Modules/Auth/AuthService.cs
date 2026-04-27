@@ -49,10 +49,13 @@ public class AuthService : IAuthService
 
         await _db.SaveChangesAsync();
 
+        var permissionDtos = permissions.Select(p => new PermissionDto(p.Id, p.Action, p.Subject, p.Conditions, p.Fields));
+
         return new LoginResponse(
             accessToken,
             refreshToken,
-            new UserInfo(user.Id, user.Name, user.Email, user.IsActive, user.Role?.Name)
+            new UserInfo(user.Id, user.Name, user.Email, user.IsActive, user.Role?.Name),
+            permissionDtos
         );
     }
 
@@ -90,10 +93,13 @@ public class AuthService : IAuthService
 
         await _db.SaveChangesAsync();
 
+        var permissionDtos = permissions.Select(p => new PermissionDto(p.Id, p.Action, p.Subject, p.Conditions, p.Fields));
+
         return new LoginResponse(
             newAccessToken,
             newRefreshToken,
-            new UserInfo(user.Id, user.Name, user.Email, user.IsActive, user.Role?.Name)
+            new UserInfo(user.Id, user.Name, user.Email, user.IsActive, user.Role?.Name),
+            permissionDtos
         );
     }
 

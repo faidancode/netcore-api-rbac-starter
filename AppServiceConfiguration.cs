@@ -27,6 +27,16 @@ public static class AppServiceConfiguration
         services.AddControllers();
         services.AddHttpContextAccessor();
 
+        services.AddCors(options =>
+        {
+            options.AddPolicy("AngularApp", policy =>
+            {
+                policy.WithOrigins("http://localhost:4200")
+                    .AllowAnyHeader()
+                    .AllowAnyMethod();
+            });
+        });
+
         // Services
         services.AddScoped<IUsersService, UsersService>();
         services.AddScoped<IRolesService, RolesService>();

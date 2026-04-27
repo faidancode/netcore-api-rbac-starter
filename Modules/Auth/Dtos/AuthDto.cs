@@ -12,7 +12,8 @@ public record RefreshRequest([Required] string RefreshToken);
 public record LoginResponse(
     string AccessToken,
     string RefreshToken,
-    UserInfo User
+    UserInfo User,
+    IEnumerable<PermissionDto> Permissions
 );
 
 public record UserInfo(

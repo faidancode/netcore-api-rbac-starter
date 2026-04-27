@@ -23,6 +23,8 @@ public static class AppPipeline
             app.UseHttpsRedirection();
         }
 
+        app.UseCors("AngularApp");
+
         app.UseAuthentication();
         app.UseAuthorization();
 
