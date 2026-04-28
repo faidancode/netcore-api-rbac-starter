@@ -3,13 +3,15 @@ using netcore_api_rbac_starter.Entities;
 using netcore_api_rbac_starter.Data;
 using netcore_api_rbac_starter.Modules.Positions.Dtos;
 using Microsoft.EntityFrameworkCore;
+using netcore_api_rbac_starter.Common.Models;
+using netcore_api_rbac_starter.Common.Extensions;
 
 namespace netcore_api_rbac_starter.Modules.Positions;
 
 public interface IPositionsService
 {
     Task<PositionDto> CreateAsync(CreatePositionRequest request);
-    Task<IEnumerable<PositionDto>> GetAllAsync();
+    Task<PagedResult<PositionDto>> GetAllAsync(ListPositionQuery query);
     Task<PositionDto> GetByIdAsync(Guid id);
     Task<PositionDto> UpdateAsync(Guid id, UpdatePositionRequest request);
     Task DeleteAsync(Guid id);
@@ -44,13 +46,35 @@ public class PositionsService : IPositionsService
         return await GetByIdAsync(position.Id);
     }
 
-    public async Task<IEnumerable<PositionDto>> GetAllAsync()
+    public async Task<PagedResult<PositionDto>> GetAllAsync(ListPositionQuery query)
     {
-        return await _db.Positions
-            .Include(p => p.Department)
-            .OrderBy(p => p.Name)
-            .Select(p => MapToDto(p))
+        var term = (query.Search ?? query.Q)?.Trim();
+        var dbQuery = _db.Positions.AsQueryable();
+
+        if (!string.IsNullOrEmpty(term))
+        {
+            var pattern = $"%{term}%";
+            dbQuery = dbQuery.Where(d => EF.Functions.ILike(d.Name, pattern) ||
+                                         (d.Description != null && EF.Functions.ILike(d.Description, pattern)));
+        }
+
+        var page = query.Page < 1 ? 1 : query.Page;
+        var limit = query.Limit < 1 ? 10 : Math.Min(query.Limit, 100);
+
+        var sortParam = query.Sort ?? "createdAt:desc";
+        dbQuery = dbQuery.ApplySorting(sortParam);
+
+        var total = await dbQuery.CountAsync();
+        var items = await dbQuery
+            .ApplyPagination(page, limit)
+            .Select(d => MapToDto(d))
             .ToListAsync();
+
+        return new PagedResult<PositionDto>
+        {
+            Items = items,
+            Total = total
+        };
     }
 
     public async Task<PositionDto> GetByIdAsync(Guid id)

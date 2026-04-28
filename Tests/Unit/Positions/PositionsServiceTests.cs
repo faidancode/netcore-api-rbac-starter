@@ -45,7 +45,8 @@ public class PositionsServiceTests
         await EntityBuilder.SeedDefaultDataAsync(db);
         var svc = new PositionsService(db);
 
-        var result = (await svc.GetAllAsync()).ToList();
+        var pagedResult = await svc.GetAllAsync(new ListPositionQuery());
+        var result = pagedResult.Items.ToList();
 
         result.Should().HaveCount(2);
         result.Should().Contain(d => d.Name == "Senior Developer");
@@ -63,7 +64,8 @@ public class PositionsServiceTests
         await db.SaveChangesAsync();
 
         var svc = new PositionsService(db);
-        var result = (await svc.GetAllAsync()).ToList();
+        var pagedResult = await svc.GetAllAsync(new ListPositionQuery());
+        var result = pagedResult.Items.ToList();
 
         result.Should().HaveCount(1);
         result.Should().NotContain(d => d.Name == "Senior Developer");
