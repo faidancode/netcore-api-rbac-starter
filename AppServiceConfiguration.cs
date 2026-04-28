@@ -9,6 +9,7 @@ using netcore_api_rbac_starter.Modules.Departments;
 using netcore_api_rbac_starter.Modules.Positions;
 using netcore_api_rbac_starter.Modules.Roles;
 using netcore_api_rbac_starter.Modules.Users;
+using netcore_api_rbac_starter.Modules.Employees;
 using netcore_api_rbac_starter.Security;
 
 namespace netcore_api_rbac_starter;
@@ -43,6 +44,7 @@ public static class AppServiceConfiguration
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IDepartmentsService, DepartmentsService>();
         services.AddScoped<IPositionsService, PositionsService>();
+        services.AddScoped<IEmployeesService, EmployeesService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IJwtService, JwtService>();
 

@@ -2,34 +2,40 @@ namespace netcore_api_rbac_starter.Common.Models;
 
 public class Response<T>
 {
-    public bool Success { get; set; }
-    public string? Message { get; set; }
-    public T? Data { get; set; }
-    public PaginationMeta? Meta { get; set; }
+    public bool Success { get; init; }
+    public string? Message { get; init; }
+    public T? Data { get; init; }
+    public PaginationMeta? Meta { get; init; }
+    public object? Errors { get; init; }
 
     public static Response<T> Ok(T? data, string? message = null, PaginationMeta? meta = null)
         => new() { Success = true, Data = data, Message = message, Meta = meta };
 
-    public static Response<T> Fail(string message)
-        => new() { Success = false, Message = message };
+    public static Response<T> OkMessage(string message)
+        => new() { Success = true, Message = message };
+
+    public static Response<T> Fail(string message, object? errors = null)
+        => new() { Success = false, Message = message, Errors = errors };
 }
 
 public class PaginationMeta
 {
-    public int Page { get; set; }
-    public int Limit { get; set; }
-    public int Total { get; set; }
-    public int TotalPages { get; set; }
-    public bool HasNextPage { get; set; }
-    public bool HasPreviousPage { get; set; }
+    public int Page { get; init; }
+    public int Limit { get; init; }
+    public int Total { get; init; }
+    public int TotalPages { get; init; }
+    public bool HasNextPage { get; init; }
+    public bool HasPreviousPage { get; init; }
 
     public static PaginationMeta Create(int page, int limit, int total)
     {
-        var totalPages = (int)Math.Ceiling((double)total / limit);
+        var safeLimit = limit < 1 ? 1 : limit;
+        var totalPages = (int)Math.Ceiling((double)total / safeLimit);
+
         return new PaginationMeta
         {
             Page = page,
-            Limit = limit,
+            Limit = safeLimit,
             Total = total,
             TotalPages = totalPages,
             HasNextPage = page < totalPages,

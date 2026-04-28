@@ -49,7 +49,8 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
             services.RemoveAll<AppDbContext>();
 
             services.AddDbContext<AppDbContext>(opts =>
-                opts.UseInMemoryDatabase(_dbName));
+                opts.UseInMemoryDatabase(_dbName)
+                    .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning)));
         });
 
         builder.UseEnvironment("Testing");

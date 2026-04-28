@@ -27,12 +27,14 @@ public class PositionsController : ControllerBase
 
     [HttpGet]
     [HasPermission("read", "Position")]
-    public async Task<ActionResult<Response<IEnumerable<PositionDto>>>> GetAll([FromQuery] ListPositionQuery query)
+    public async Task<ActionResult<Response<IEnumerable<PositionDto>>>> GetAll(
+        [FromQuery] ListPositionQuery query
+        )
     {
         var result = await _service.GetAllAsync(query);
         return Ok(Response<IEnumerable<PositionDto>>.Ok(
             result.Items,
-            meta: PaginationMeta.Create(query.Page, query.Limit, result.Total)
+            meta: PaginationMeta.Create(result.Page, result.Limit, result.Total)
         ));
     }
 
