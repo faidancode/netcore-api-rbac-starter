@@ -48,7 +48,8 @@ public class RolesServiceTests
         await EntityBuilder.SeedDefaultDataAsync(db);
         var svc = new RolesService(db);
 
-        var result = (await svc.GetAllAsync()).ToList();
+        var pagedResult = await svc.GetAllAsync(new ListRoleQuery());
+        var result = pagedResult.Items.ToList();
 
         result.Should().HaveCount(2);
         result.Should().Contain(r => r.Name == "Admin");
@@ -62,8 +63,9 @@ public class RolesServiceTests
         await EntityBuilder.SeedDefaultDataAsync(db);
         var svc = new RolesService(db);
 
-        var roles = (await svc.GetAllAsync()).ToList();
-        var admin = roles.Single(r => r.Name == "Admin");
+        var pagedResult = await svc.GetAllAsync(new ListRoleQuery());
+        var result = pagedResult.Items.ToList();
+        var admin = result.Single(r => r.Name == "Admin");
 
         admin.Permissions.Should().ContainSingle(p => p.Action == "manage" && p.Subject == "all");
     }

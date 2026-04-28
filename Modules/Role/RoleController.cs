@@ -30,13 +30,15 @@ public class RolesController : ControllerBase
 
     [HttpGet]
     [HasPermission("read", "Role")]
-    public async Task<ActionResult<Response<IEnumerable<RoleDto>>>> GetAll([FromQuery] int page = 1, [FromQuery] int limit = 10)
+    public async Task<ActionResult<Response<IEnumerable<RoleDto>>>> GetAll(
+        [FromQuery] ListRoleQuery query
+        )
     {
-        page = page < 1 ? 1 : page;
-        limit = limit < 1 ? 10 : Math.Min(limit, 100);
-
-        var result = await _rolesService.GetPagedAsync(page, limit);
-        return Ok(Response<IEnumerable<RoleDto>>.Ok(result.Items, meta: PaginationMeta.Create(page, limit, result.Total)));
+        var result = await _rolesService.GetAllAsync(query);
+        return Ok(Response<IEnumerable<RoleDto>>.Ok(
+            result.Items,
+            meta: PaginationMeta.Create(result.Page, result.Limit, result.Total)
+        ));
     }
 
     [HttpGet("{id:guid}")]

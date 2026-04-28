@@ -12,8 +12,7 @@ namespace netcore_api_rbac_starter.Modules.Roles;
 public interface IRolesService
 {
     Task<RoleDto> CreateAsync(CreateRoleRequest request);
-    Task<IEnumerable<RoleDto>> GetAllAsync();
-    Task<PagedResult<RoleDto>> GetPagedAsync(int page, int limit);
+    Task<PagedResult<RoleDto>> GetAllAsync(ListRoleQuery query);
     Task<RoleDto> GetByIdAsync(Guid id);
     Task<RoleDto> UpdateAsync(Guid id, UpdateRoleRequest request);
     Task DeleteAsync(Guid id);
@@ -42,14 +41,35 @@ public class RolesService : IRolesService
         return await GetByIdAsync(role.Id);
     }
 
-    public async Task<IEnumerable<RoleDto>> GetAllAsync()
+    public async Task<PagedResult<RoleDto>> GetAllAsync(ListRoleQuery query)
     {
-        var roles = await _db.Roles
-            .Include(r => r.RolePermissions).ThenInclude(rp => rp.Permission)
-            .OrderBy(r => r.Name)
+        var term = (query.Search ?? query.Q)?.Trim();
+        var dbQuery = _db.Roles.AsQueryable();
+
+        if (!string.IsNullOrEmpty(term))
+        {
+            var pattern = $"%{term}%";
+            dbQuery = dbQuery.Where(d => EF.Functions.ILike(d.Name, pattern) ||
+                                         (d.Description != null && EF.Functions.ILike(d.Description, pattern)));
+        }
+
+        var page = query.Page < 1 ? 1 : query.Page;
+        var limit = query.Limit < 1 ? 10 : Math.Min(query.Limit, 100);
+
+        var sortParam = query.Sort ?? "createdAt:desc";
+        dbQuery = dbQuery.ApplySorting(sortParam);
+
+        var total = await dbQuery.CountAsync();
+        var items = await dbQuery
+            .ApplyPagination(page, limit)
+            .Select(d => MapToDto(d))
             .ToListAsync();
 
-        return roles.Select(MapToDto);
+        return new PagedResult<RoleDto>
+        {
+            Items = items,
+            Total = total
+        };
     }
 
     public async Task<PagedResult<RoleDto>> GetPagedAsync(int page, int limit)

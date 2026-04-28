@@ -3,6 +3,14 @@ using netcore_api_rbac_starter.Modules.Auth.Dtos;
 
 namespace netcore_api_rbac_starter.Modules.Roles.Dtos;
 
+public record ListRoleQuery(
+    string? Q = null,
+    string? Search = null,
+    int Page = 1,
+    int Limit = 10,
+    string Sort = "createdAt:desc"
+);
+
 public record CreateRoleRequest(
     [Required(AllowEmptyStrings = false)]
     [StringLength(50, MinimumLength = 3)]
