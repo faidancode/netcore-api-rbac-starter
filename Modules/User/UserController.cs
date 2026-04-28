@@ -30,13 +30,15 @@ public class UsersController : ControllerBase
 
     [HttpGet]
     [HasPermission("read", "User")]
-    public async Task<ActionResult<Response<IEnumerable<UserDto>>>> GetAll([FromQuery] int page = 1, [FromQuery] int limit = 10)
+    public async Task<ActionResult<Response<IEnumerable<UserDto>>>> GetAll(
+        [FromQuery] ListUsersQuery query
+        )
     {
-        page = page < 1 ? 1 : page;
-        limit = limit < 1 ? 10 : Math.Min(limit, 100);
-
-        var result = await _usersService.GetPagedAsync(page, limit);
-        return Ok(Response<IEnumerable<UserDto>>.Ok(result.Items, meta: PaginationMeta.Create(page, limit, result.Total)));
+        var result = await _usersService.GetAllAsync(query);
+        return Ok(Response<IEnumerable<UserDto>>.Ok(
+            result.Items,
+            meta: PaginationMeta.Create(result.Page, result.Limit, result.Total)
+        ));
     }
 
     [HttpGet("{id:guid}")]

@@ -11,8 +11,8 @@ namespace netcore_api_rbac_starter.Modules.Users;
 public interface IUsersService
 {
     Task<UserDto> CreateAsync(CreateUserRequest request);
-    Task<IEnumerable<UserDto>> GetAllAsync();
-    Task<PagedResult<UserDto>> GetPagedAsync(int page, int limit);
+    Task<PagedResult<UserDto>> GetAllAsync(ListUsersQuery query);
+
     Task<UserDto> GetByIdAsync(Guid id);
     Task<UserDto> UpdateAsync(Guid id, UpdateUserRequest request);
     Task DeleteAsync(Guid id);
@@ -55,28 +55,27 @@ public class UsersService : IUsersService
         return await GetByIdAsync(user.Id);
     }
 
-    public async Task<IEnumerable<UserDto>> GetAllAsync()
+    public async Task<PagedResult<UserDto>> GetAllAsync(ListUsersQuery query)
     {
-        return await _db.Users
-            .Include(u => u.Role)
-            .OrderBy(u => u.Name)
-            .Select(u => MapToDto(u))
-            .ToListAsync();
-    }
+        var term = (query.Search ?? query.Q)?.Trim();
+        var dbQuery = _db.Users.AsQueryable();
 
-    public async Task<PagedResult<UserDto>> GetPagedAsync(int page, int limit)
-    {
-        page = page < 1 ? 1 : page;
-        limit = limit < 1 ? 10 : Math.Min(limit, 100);
+        if (!string.IsNullOrEmpty(term))
+        {
+            var pattern = $"%{term}%";
+            dbQuery = dbQuery.Where(d => EF.Functions.ILike(d.Name, pattern));
+        }
 
-        var query = _db.Users
-            .Include(u => u.Role)
-            .OrderBy(u => u.Name);
+        var page = query.Page < 1 ? 1 : query.Page;
+        var limit = query.Limit < 1 ? 10 : Math.Min(query.Limit, 100);
 
-        var total = await query.CountAsync();
-        var items = await query
+        var sortParam = query.Sort ?? "createdAt:desc";
+        dbQuery = dbQuery.ApplySorting(sortParam);
+
+        var total = await dbQuery.CountAsync();
+        var items = await dbQuery
             .ApplyPagination(page, limit)
-            .Select(u => MapToDto(u))
+            .Select(d => MapToDto(d))
             .ToListAsync();
 
         return new PagedResult<UserDto>

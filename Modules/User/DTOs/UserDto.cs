@@ -2,6 +2,14 @@ using System.ComponentModel.DataAnnotations;
 
 namespace netcore_api_rbac_starter.Modules.Users.Dtos;
 
+public record ListUsersQuery(
+    string? Q = null,
+    string? Search = null,
+    int Page = 1,
+    int Limit = 10,
+    string Sort = "createdAt:desc"
+);
+
 public record CreateUserRequest(
     [Required(AllowEmptyStrings = false)]
     [StringLength(100, MinimumLength = 2)]

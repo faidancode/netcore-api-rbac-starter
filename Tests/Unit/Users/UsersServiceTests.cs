@@ -75,9 +75,10 @@ public class UsersServiceTests
     {
         await using var db = DbContextFactory.Create();
         await EntityBuilder.SeedDefaultDataAsync(db);
-        var svc = new UsersService(db);
 
-        var result = (await svc.GetAllAsync()).ToList();
+        var svc = new UsersService(db);
+        var pagedResult = await svc.GetAllAsync(new ListUsersQuery());
+        var result = pagedResult.Items.ToList();
 
         result.Should().HaveCount(2);
         result.Should().Contain(u => u.Email == "admin@example.com");
@@ -95,7 +96,8 @@ public class UsersServiceTests
         await db.SaveChangesAsync();
 
         var svc = new UsersService(db);
-        var result = (await svc.GetAllAsync()).ToList();
+        var pagedResult = await svc.GetAllAsync(new ListUsersQuery());
+        var result = pagedResult.Items.ToList();
 
         result.Should().HaveCount(1);
         result.Should().NotContain(u => u.Email == "user@example.com");
@@ -224,8 +226,9 @@ public class UsersServiceTests
 
         await svc.DeleteAsync(EntityBuilder.RegularUserId);
 
-        var all = await svc.GetAllAsync();
-        all.Should().NotContain(u => u.Id == EntityBuilder.RegularUserId);
+        var pagedResult = await svc.GetAllAsync(new ListUsersQuery());
+        var result = pagedResult.Items.ToList();
+        result.Should().NotContain(u => u.Id == EntityBuilder.RegularUserId);
     }
 }
 
