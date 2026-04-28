@@ -27,10 +27,13 @@ public class DepartmentsController : ControllerBase
 
     [HttpGet]
     [HasPermission("read", "Department")]
-    public async Task<ActionResult<Response<IEnumerable<DepartmentDto>>>> GetAll()
+    public async Task<ActionResult<Response<IEnumerable<DepartmentDto>>>> GetAll([FromQuery] ListDepartmentQuery query)
     {
-        var result = await _service.GetAllAsync();
-        return Ok(Response<IEnumerable<DepartmentDto>>.Ok(result));
+        var result = await _service.GetAllAsync(query);
+        return Ok(Response<IEnumerable<DepartmentDto>>.Ok(
+            result.Items, 
+            meta: PaginationMeta.Create(query.Page, query.Limit, result.Total)
+        ));
     }
 
     [HttpGet("{id:guid}")]

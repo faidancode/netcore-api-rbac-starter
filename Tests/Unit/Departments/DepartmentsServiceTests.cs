@@ -43,7 +43,8 @@ public class DepartmentsServiceTests
         await EntityBuilder.SeedDefaultDataAsync(db);
         var svc = new DepartmentsService(db);
 
-        var result = (await svc.GetAllAsync()).ToList();
+        var pagedResult = await svc.GetAllAsync(new ListDepartmentQuery());
+        var result = pagedResult.Items.ToList();
 
         result.Should().HaveCount(2);
         result.Should().Contain(d => d.Name == "Engineering");
@@ -61,7 +62,8 @@ public class DepartmentsServiceTests
         await db.SaveChangesAsync();
 
         var svc = new DepartmentsService(db);
-        var result = (await svc.GetAllAsync()).ToList();
+        var pagedResult = await svc.GetAllAsync(new ListDepartmentQuery());
+        var result = pagedResult.Items.ToList();
 
         result.Should().HaveCount(1);
         result.Should().NotContain(d => d.Name == "Engineering");
