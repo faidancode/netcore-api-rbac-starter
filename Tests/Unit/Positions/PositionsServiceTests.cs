@@ -51,6 +51,7 @@ public class PositionsServiceTests
         result.Should().HaveCount(2);
         result.Should().Contain(d => d.Name == "Senior Developer");
         result.Should().Contain(d => d.Name == "HR Manager");
+        result.Should().OnlyContain(d => !string.IsNullOrWhiteSpace(d.DepartmentName));
     }
 
     [Fact]

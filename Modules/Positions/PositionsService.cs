@@ -67,13 +67,22 @@ public class PositionsService : IPositionsService
         var total = await dbQuery.CountAsync();
         var items = await dbQuery
             .ApplyPagination(page, limit)
-            .Select(d => MapToDto(d))
+            .Select(d => new PositionDto(
+                d.Id,
+                d.Name,
+                d.Description,
+                d.DepartmentId,
+                d.Department != null ? d.Department.Name : string.Empty,
+                d.CreatedAt,
+                d.UpdatedAt))
             .ToListAsync();
 
         return new PagedResult<PositionDto>
         {
             Items = items,
-            Total = total
+            Total = total,
+            Page = page,
+            Limit = limit
         };
     }
 
@@ -130,5 +139,5 @@ public class PositionsService : IPositionsService
     }
 
     private static PositionDto MapToDto(Position p) =>
-        new(p.Id, p.Name, p.Description, p.DepartmentId, p.Department!.Name, p.CreatedAt, p.UpdatedAt);
+        new(p.Id, p.Name, p.Description, p.DepartmentId, p.Department?.Name ?? string.Empty, p.CreatedAt, p.UpdatedAt);
 }

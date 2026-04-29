@@ -30,16 +30,17 @@ public class PaginationMeta
     public static PaginationMeta Create(int page, int limit, int total)
     {
         var safeLimit = limit < 1 ? 1 : limit;
+        var safePage = page < 1 ? 1 : page;
         var totalPages = (int)Math.Ceiling((double)total / safeLimit);
 
         return new PaginationMeta
         {
-            Page = page,
+            Page = safePage,
             Limit = safeLimit,
             Total = total,
             TotalPages = totalPages,
-            HasNextPage = page < totalPages,
-            HasPreviousPage = page > 1
+            HasNextPage = totalPages > 0 && safePage < totalPages,
+            HasPreviousPage = safePage > 1 && totalPages > 0
         };
     }
 }

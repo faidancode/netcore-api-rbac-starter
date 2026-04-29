@@ -81,7 +81,9 @@ public class UsersService : IUsersService
         return new PagedResult<UserDto>
         {
             Items = items,
-            Total = total
+            Total = total,
+            Page = page,
+            Limit = limit
         };
     }
 

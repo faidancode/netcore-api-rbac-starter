@@ -68,7 +68,9 @@ public class RolesService : IRolesService
         return new PagedResult<RoleDto>
         {
             Items = items,
-            Total = total
+            Total = total,
+            Page = page,
+            Limit = limit
         };
     }
 
@@ -89,7 +91,9 @@ public class RolesService : IRolesService
         return new PagedResult<RoleDto>
         {
             Items = items.Select(MapToDto).ToList(),
-            Total = total
+            Total = total,
+            Page = page,
+            Limit = limit
         };
     }
 

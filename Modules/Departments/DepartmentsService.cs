@@ -62,7 +62,9 @@ public class DepartmentsService : IDepartmentsService
         return new PagedResult<DepartmentDto>
         {
             Items = items,
-            Total = total
+            Total = total,
+            Page = page,
+            Limit = limit
         };
     }
 
