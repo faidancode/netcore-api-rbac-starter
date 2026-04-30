@@ -23,12 +23,16 @@ public static class AppPipeline
             app.UseHttpsRedirection();
         }
 
+        app.UseMiddleware<RequestIdMiddleware>();
+
         app.UseCors("AngularApp");
-        
+
         app.UseRateLimiter();
 
         app.UseAuthentication();
         app.UseAuthorization();
+
+        app.UseMiddleware<IdempotencyMiddleware>();
 
         app.MapControllers();
 

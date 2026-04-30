@@ -73,6 +73,8 @@ public static class AppServiceConfiguration
                 opt.UseNpgsql(config.GetConnectionString("Default")));
         }
 
+        services.AddRedis(config);
+
         services.AddRateLimiter(options =>
         {
             options.AddFixedWindowLimiter("global", opt =>
