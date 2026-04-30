@@ -17,6 +17,14 @@ public static class DatabaseSeeder
     private static readonly Guid CreateRolePermissionId = Guid.Parse("66666666-0000-0000-0000-000000000007");
     private static readonly Guid UpdateRolePermissionId = Guid.Parse("66666666-0000-0000-0000-000000000008");
     private static readonly Guid DeleteRolePermissionId = Guid.Parse("66666666-0000-0000-0000-000000000009");
+    private static readonly Guid ReadDepartmentPermissionId = Guid.Parse("66666666-0000-0000-0000-000000000010");
+    private static readonly Guid CreateDepartmentPermissionId = Guid.Parse("66666666-0000-0000-0000-000000000011");
+    private static readonly Guid UpdateDepartmentPermissionId = Guid.Parse("66666666-0000-0000-0000-000000000012");
+    private static readonly Guid DeleteDepartmentPermissionId = Guid.Parse("66666666-0000-0000-0000-000000000013");
+    private static readonly Guid ReadEmployeePermissionId = Guid.Parse("66666666-0000-0000-0000-000000000014");
+    private static readonly Guid CreateEmployeePermissionId = Guid.Parse("66666666-0000-0000-0000-000000000015");
+    private static readonly Guid UpdateEmployeePermissionId = Guid.Parse("66666666-0000-0000-0000-000000000016");
+    private static readonly Guid DeleteEmployeePermissionId = Guid.Parse("66666666-0000-0000-0000-000000000017");
 
     private static readonly Guid AdminUserId = Guid.Parse("22222222-0000-0000-0000-000000000001");
     private static readonly Guid ViewerUserId = Guid.Parse("22222222-0000-0000-0000-000000000002");
@@ -44,7 +52,15 @@ public static class DatabaseSeeder
             new Permission { Id = ReadRolePermissionId, Action = "read", Subject = "Role" },
             new Permission { Id = CreateRolePermissionId, Action = "create", Subject = "Role" },
             new Permission { Id = UpdateRolePermissionId, Action = "update", Subject = "Role" },
-            new Permission { Id = DeleteRolePermissionId, Action = "delete", Subject = "Role" }
+            new Permission { Id = DeleteRolePermissionId, Action = "delete", Subject = "Role" },
+            new Permission { Id = ReadDepartmentPermissionId, Action = "read", Subject = "Department" },
+            new Permission { Id = CreateDepartmentPermissionId, Action = "create", Subject = "Department" },
+            new Permission { Id = UpdateDepartmentPermissionId, Action = "update", Subject = "Department" },
+            new Permission { Id = DeleteDepartmentPermissionId, Action = "delete", Subject = "Department" },
+            new Permission { Id = ReadEmployeePermissionId, Action = "read", Subject = "Employee" },
+            new Permission { Id = CreateEmployeePermissionId, Action = "create", Subject = "Employee" },
+            new Permission { Id = UpdateEmployeePermissionId, Action = "update", Subject = "Employee" },
+            new Permission { Id = DeleteEmployeePermissionId, Action = "delete", Subject = "Employee" }
         };
 
         foreach (var permission in permissions)

@@ -4,6 +4,7 @@ using netcore_api_rbac_starter.Entities;
 using netcore_api_rbac_starter.Data;
 using netcore_api_rbac_starter.Common.Models;
 using netcore_api_rbac_starter.Modules.Users.Dtos;
+using netcore_api_rbac_starter.Security;
 using Microsoft.EntityFrameworkCore;
 
 namespace netcore_api_rbac_starter.Modules.Users;
@@ -15,16 +16,19 @@ public interface IUsersService
 
     Task<UserDto> GetByIdAsync(Guid id);
     Task<UserDto> UpdateAsync(Guid id, UpdateUserRequest request);
+    Task ChangePasswordAsync(Guid id, ChangeUserPasswordRequest request);
     Task DeleteAsync(Guid id);
 }
 
 public class UsersService : IUsersService
 {
     private readonly AppDbContext _db;
+    private readonly ICurrentUserService? _currentUser;
 
-    public UsersService(AppDbContext db)
+    public UsersService(AppDbContext db, ICurrentUserService? currentUser = null)
     {
         _db = db;
+        _currentUser = currentUser;
     }
 
     public async Task<UserDto> CreateAsync(CreateUserRequest request)
@@ -113,7 +117,6 @@ public class UsersService : IUsersService
         }
 
         if (request.Name != null) user.Name = request.Name;
-        if (request.Password != null) user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
         if (request.IsActive.HasValue) user.IsActive = request.IsActive.Value;
 
         if (request.RoleId != null)
@@ -133,6 +136,24 @@ public class UsersService : IUsersService
 
         await _db.SaveChangesAsync();
         return await GetByIdAsync(user.Id);
+    }
+
+    public async Task ChangePasswordAsync(Guid id, ChangeUserPasswordRequest request)
+    {
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id)
+            ?? throw new NotFoundException("User", id);
+
+        var isSelfService = _currentUser?.IsAuthenticated == true && _currentUser.UserId == id;
+
+        if (isSelfService)
+        {
+            var currentPassword = request.CurrentPassword?.Trim();
+            if (string.IsNullOrWhiteSpace(currentPassword) || !BCrypt.Net.BCrypt.Verify(currentPassword, user.PasswordHash))
+                throw new UnauthorizedException("Current password is invalid.");
+        }
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+        await _db.SaveChangesAsync();
     }
 
     public async Task DeleteAsync(Guid id)

@@ -2,8 +2,12 @@ using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
 using netcore_api_rbac_starter.Common.Models;
+using netcore_api_rbac_starter.Data;
+using netcore_api_rbac_starter.Entities;
 using netcore_api_rbac_starter.Modules.Users.Dtos;
 using netcore_api_rbac_starter.Tests.Helpers;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace netcore_api_rbac_starter.Tests.Integration.Users;
 
@@ -161,6 +165,28 @@ public class UsersIntegrationTests : IClassFixture<ApiFactory>
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<Response<UserDto>>();
         body!.Data!.Name.Should().Be("Updated Regular");
+    }
+
+    [Fact]
+    public async Task ChangePassword_ValidRequest_Returns200()
+    {
+        var client = _factory.CreateAdminClient();
+
+        var response = await client.PatchAsJsonAsync(
+            $"/users/{EntityBuilder.RegularUserId}/password",
+            new
+            {
+                newPassword = "NewPass@456!",
+                confirmPassword = "NewPass@456!"
+            });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var user = await db.Users.IgnoreQueryFilters()
+            .FirstAsync(u => u.Id == EntityBuilder.RegularUserId);
+        BCrypt.Net.BCrypt.Verify("NewPass@456!", user.PasswordHash).Should().BeTrue();
     }
 
     [Fact]

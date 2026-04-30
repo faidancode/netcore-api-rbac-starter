@@ -1,4 +1,5 @@
 using netcore_api_rbac_starter.Common.Models;
+using netcore_api_rbac_starter.Modules.Auth.Dtos;
 using netcore_api_rbac_starter.Modules.Roles.Dtos;
 using netcore_api_rbac_starter.Security;
 using Microsoft.AspNetCore.Authorization;
@@ -26,6 +27,14 @@ public class RolesController : ControllerBase
         var result = await _rolesService.CreateAsync(request);
         return CreatedAtAction(nameof(GetById), new { id = result.Id },
             Response<RoleDto>.Ok(result, "Role created successfully."));
+    }
+
+    [HttpGet("permissions")]
+    [HasPermission("read", "Role")]
+    public async Task<ActionResult<Response<IEnumerable<PermissionDto>>>> GetPermissions()
+    {
+        var result = await _rolesService.GetPermissionsAsync();
+        return Ok(Response<IEnumerable<PermissionDto>>.Ok(result));
     }
 
     [HttpGet]

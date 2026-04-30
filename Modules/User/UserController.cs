@@ -57,6 +57,16 @@ public class UsersController : ControllerBase
         return Ok(Response<UserDto>.Ok(result, "User updated successfully."));
     }
 
+    [HttpPatch("{id:guid}/password")]
+    [HasPermission("update", "User")]
+    public async Task<ActionResult<Response<object?>>> ChangePassword(
+        Guid id,
+        [FromBody] ChangeUserPasswordRequest request)
+    {
+        await _usersService.ChangePasswordAsync(id, request);
+        return Ok(Response<object?>.Ok(null, "Password updated successfully."));
+    }
+
     [HttpDelete("{id:guid}")]
     [HasPermission("delete", "User")]
     public async Task<ActionResult<Response<object?>>> Delete(Guid id)

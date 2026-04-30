@@ -7,6 +7,7 @@ using netcore_api_rbac_starter.Modules.Users;
 using netcore_api_rbac_starter.Modules.Users.Dtos;
 using netcore_api_rbac_starter.Modules.Users.Validators;
 using netcore_api_rbac_starter.Tests.Helpers;
+using netcore_api_rbac_starter.Security;
 
 namespace netcore_api_rbac_starter.Tests.Unit.Users;
 
@@ -137,7 +138,7 @@ public class UsersServiceTests
         var svc = new UsersService(db);
 
         var result = await svc.UpdateAsync(EntityBuilder.AdminUserId,
-            new UpdateUserRequest("Updated Name", null, null, null, null));
+            new UpdateUserRequest("Updated Name", null, null, null));
 
         result.Name.Should().Be("Updated Name");
     }
@@ -151,21 +152,34 @@ public class UsersServiceTests
 
         await Assert.ThrowsAsync<ConflictException>(() =>
             svc.UpdateAsync(EntityBuilder.AdminUserId,
-                new UpdateUserRequest(null, "user@example.com", null, null, null)));
+                new UpdateUserRequest(null, "user@example.com", null, null)));
     }
 
     [Fact]
-    public async Task Update_ChangePassword_HashesNewPassword()
+    public async Task ChangePassword_ValidRequest_HashesNewPassword()
     {
         await using var db = DbContextFactory.Create();
         await EntityBuilder.SeedDefaultDataAsync(db);
         var svc = new UsersService(db);
 
-        await svc.UpdateAsync(EntityBuilder.AdminUserId,
-            new UpdateUserRequest(null, null, "NewPass@456!", null, null));
+        await svc.ChangePasswordAsync(EntityBuilder.AdminUserId,
+            new ChangeUserPasswordRequest(null, "NewPass@456!", "NewPass@456!"));
 
         var user = db.Users.First(u => u.Id == EntityBuilder.AdminUserId);
         BCrypt.Net.BCrypt.Verify("NewPass@456!", user.PasswordHash).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ChangePassword_SelfServiceWrongCurrentPassword_ThrowsUnauthorized()
+    {
+        await using var db = DbContextFactory.Create();
+        await EntityBuilder.SeedDefaultDataAsync(db);
+        var currentUser = new TestCurrentUserService(EntityBuilder.AdminUserId, true);
+        var svc = new UsersService(db, currentUser);
+
+        await Assert.ThrowsAsync<UnauthorizedException>(() =>
+            svc.ChangePasswordAsync(EntityBuilder.AdminUserId,
+                new ChangeUserPasswordRequest("WrongPassword", "NewPass@456!", "NewPass@456!")));
     }
 
     [Fact]
@@ -175,7 +189,7 @@ public class UsersServiceTests
         var svc = new UsersService(db);
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
-            svc.UpdateAsync(Guid.NewGuid(), new UpdateUserRequest("X", null, null, null, null)));
+            svc.UpdateAsync(Guid.NewGuid(), new UpdateUserRequest("X", null, null, null)));
     }
 
     [Fact]
@@ -186,7 +200,7 @@ public class UsersServiceTests
         var svc = new UsersService(db);
 
         var result = await svc.UpdateAsync(EntityBuilder.AdminUserId,
-            new UpdateUserRequest(null, null, null, Guid.Empty, null));
+            new UpdateUserRequest(null, null, Guid.Empty, null));
 
         result.RoleId.Should().BeNull();
     }
@@ -285,7 +299,7 @@ public class UserValidatorTests
     {
         // All fields nullable — empty update is valid
         var result = _updateValidator.TestValidate(
-            new UpdateUserRequest(null, null, null, null, null));
+            new UpdateUserRequest(null, null, null, null));
         result.ShouldNotHaveAnyValidationErrors();
     }
 
@@ -293,7 +307,41 @@ public class UserValidatorTests
     public void Update_InvalidEmail_FailsValidation()
     {
         var result = _updateValidator.TestValidate(
-            new UpdateUserRequest(null, "bad-email", null, null, null));
+            new UpdateUserRequest(null, "bad-email", null, null));
         result.ShouldHaveValidationErrorFor(x => x.Email);
+    }
+
+    [Fact]
+    public void ChangePassword_ValidRequest_PassesValidation()
+    {
+        var validator = new ChangeUserPasswordRequestValidator();
+        var result = validator.TestValidate(
+            new ChangeUserPasswordRequest("Current1!", "Password1!", "Password1!"));
+        result.ShouldNotHaveAnyValidationErrors();
+    }
+
+    [Fact]
+    public void ChangePassword_MismatchConfirm_FailsValidation()
+    {
+        var validator = new ChangeUserPasswordRequestValidator();
+        var result = validator.TestValidate(
+            new ChangeUserPasswordRequest("Current1!", "Password1!", "Password2!"));
+        result.ShouldHaveValidationErrorFor(x => x.ConfirmPassword);
+    }
+
+    private sealed class TestCurrentUserService : ICurrentUserService
+    {
+        public TestCurrentUserService(Guid userId, bool isAuthenticated)
+        {
+            UserId = userId;
+            IsAuthenticated = isAuthenticated;
+        }
+
+        public Guid UserId { get; }
+        public string Email => "admin@example.com";
+        public bool IsAuthenticated { get; }
+        public IEnumerable<string> Permissions => Enumerable.Empty<string>();
+
+        public bool HasPermission(string action, string subject) => false;
     }
 }

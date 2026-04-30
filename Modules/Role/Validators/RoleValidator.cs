@@ -9,11 +9,32 @@ public class CreateRoleRequestValidator : AbstractValidator<CreateRoleRequest>
     {
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("Role name is required.")
-            .MaximumLength(100).WithMessage("Role name must not exceed 100 characters.");
+            .MaximumLength(50).WithMessage("Role name must not exceed 50 characters.");
 
         RuleFor(x => x.Description)
-            .MaximumLength(500).WithMessage("Description must not exceed 500 characters.")
+            .MaximumLength(250).WithMessage("Description must not exceed 250 characters.")
             .When(x => x.Description != null);
+
+        RuleFor(x => x.PermissionIds)
+            .NotNull().WithMessage("PermissionIds must not be null.");
+    }
+}
+
+public class UpdateRoleRequestValidator : AbstractValidator<UpdateRoleRequest>
+{
+    public UpdateRoleRequestValidator()
+    {
+        RuleFor(x => x.Name)
+            .NotEmpty().WithMessage("Role name cannot be empty.")
+            .MaximumLength(50).WithMessage("Role name must not exceed 50 characters.")
+            .When(x => x.Name != null);
+
+        RuleFor(x => x.Description)
+            .MaximumLength(250).WithMessage("Description must not exceed 250 characters.")
+            .When(x => x.Description != null);
+
+        RuleFor(x => x.PermissionIds)
+            .NotNull().WithMessage("PermissionIds must not be null.");
     }
 }
 

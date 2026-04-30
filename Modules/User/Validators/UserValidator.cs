@@ -34,9 +34,19 @@ public class UpdateUserRequestValidator : AbstractValidator<UpdateUserRequest>
             .EmailAddress().WithMessage("Invalid email format.")
             .MaximumLength(255).WithMessage("Email must not exceed 255 characters.")
             .When(x => x.Email != null);
+    }
+}
 
-        RuleFor(x => x.Password)
-            .MinimumLength(6).WithMessage("Password must be at least 6 characters.")
-            .When(x => x.Password != null);
+public class ChangeUserPasswordRequestValidator : AbstractValidator<ChangeUserPasswordRequest>
+{
+    public ChangeUserPasswordRequestValidator()
+    {
+        RuleFor(x => x.NewPassword)
+            .NotEmpty().WithMessage("New password is required.")
+            .MinimumLength(8).WithMessage("New password must be at least 8 characters.");
+
+        RuleFor(x => x.ConfirmPassword)
+            .NotEmpty().WithMessage("Confirm password is required.")
+            .Equal(x => x.NewPassword).WithMessage("Confirm password must match new password.");
     }
 }

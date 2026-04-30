@@ -13,6 +13,7 @@ public interface IRolesService
 {
     Task<RoleDto> CreateAsync(CreateRoleRequest request);
     Task<PagedResult<RoleDto>> GetAllAsync(ListRoleQuery query);
+    Task<IEnumerable<PermissionDto>> GetPermissionsAsync();
     Task<RoleDto> GetByIdAsync(Guid id);
     Task<RoleDto> UpdateAsync(Guid id, UpdateRoleRequest request);
     Task DeleteAsync(Guid id);
@@ -30,15 +31,30 @@ public class RolesService : IRolesService
 
     public async Task<RoleDto> CreateAsync(CreateRoleRequest request)
     {
-        var exists = await _db.Roles.AnyAsync(r => r.Name == request.Name);
-        if (exists)
-            throw new ConflictException($"Role '{request.Name}' already exists.");
+        await using var tx = await _db.Database.BeginTransactionAsync();
+        try
+        {
+            var exists = await _db.Roles.AnyAsync(r => r.Name == request.Name);
+            if (exists)
+                throw new ConflictException($"Role '{request.Name}' already exists.");
 
-        var role = new Role { Name = request.Name, Description = request.Description };
-        _db.Roles.Add(role);
-        await _db.SaveChangesAsync();
+            var permissionIds = await NormalizeAndValidatePermissionIdsAsync(request.PermissionIds);
 
-        return await GetByIdAsync(role.Id);
+            var role = new Role { Name = request.Name, Description = request.Description };
+            _db.Roles.Add(role);
+            await _db.SaveChangesAsync();
+
+            await ReplacePermissionsAsync(role.Id, permissionIds);
+            await _db.SaveChangesAsync();
+
+            await tx.CommitAsync();
+            return await GetByIdAsync(role.Id);
+        }
+        catch
+        {
+            await tx.RollbackAsync();
+            throw;
+        }
     }
 
     public async Task<PagedResult<RoleDto>> GetAllAsync(ListRoleQuery query)
@@ -72,6 +88,16 @@ public class RolesService : IRolesService
             Page = page,
             Limit = limit
         };
+    }
+
+    public async Task<IEnumerable<PermissionDto>> GetPermissionsAsync()
+    {
+        return await _db.Permissions
+            .OrderBy(p => p.Subject)
+            .ThenBy(p => p.Action)
+            .Select(p => new PermissionDto(
+                p.Id, p.Action, p.Subject, p.Conditions, p.Fields))
+            .ToListAsync();
     }
 
     public async Task<PagedResult<RoleDto>> GetPagedAsync(int page, int limit)
@@ -109,21 +135,36 @@ public class RolesService : IRolesService
 
     public async Task<RoleDto> UpdateAsync(Guid id, UpdateRoleRequest request)
     {
-        var role = await _db.Roles.FirstOrDefaultAsync(r => r.Id == id)
-            ?? throw new NotFoundException("Role", id);
-
-        if (request.Name != null && request.Name != role.Name)
+        await using var tx = await _db.Database.BeginTransactionAsync();
+        try
         {
-            var nameExists = await _db.Roles.AnyAsync(r => r.Name == request.Name);
-            if (nameExists)
-                throw new ConflictException($"Role '{request.Name}' already exists.");
-            role.Name = request.Name;
+            var role = await _db.Roles
+                .Include(r => r.RolePermissions)
+                .FirstOrDefaultAsync(r => r.Id == id)
+                ?? throw new NotFoundException("Role", id);
+
+            if (request.Name != null && request.Name != role.Name)
+            {
+                var nameExists = await _db.Roles.AnyAsync(r => r.Name == request.Name);
+                if (nameExists)
+                    throw new ConflictException($"Role '{request.Name}' already exists.");
+                role.Name = request.Name;
+            }
+
+            if (request.Description != null) role.Description = request.Description;
+
+            var permissionIds = await NormalizeAndValidatePermissionIdsAsync(request.PermissionIds);
+            await ReplacePermissionsAsync(role.Id, permissionIds);
+
+            await _db.SaveChangesAsync();
+            await tx.CommitAsync();
+            return await GetByIdAsync(role.Id);
         }
-
-        if (request.Description != null) role.Description = request.Description;
-
-        await _db.SaveChangesAsync();
-        return await GetByIdAsync(role.Id);
+        catch
+        {
+            await tx.RollbackAsync();
+            throw;
+        }
     }
 
     public async Task DeleteAsync(Guid id)
@@ -138,45 +179,69 @@ public class RolesService : IRolesService
 
     public async Task<RoleDto> AssignPermissionsAsync(Guid id, AssignPermissionsRequest request)
     {
-        // 1. Fetch Role (Throws 404 if not found)
-        var role = await _db.Roles
-            .Include(r => r.RolePermissions)
-            .FirstOrDefaultAsync(r => r.Id == id)
-            ?? throw new NotFoundException("Role", id);
-
-        var permissionIds = request.PermissionIds.Distinct().ToList();
-
-        // 2. Validate Permissions (Ensures 404 if any ID is "Unknown")
-        if (permissionIds.Any())
+        await using var tx = await _db.Database.BeginTransactionAsync();
+        try
         {
-            var existingCount = await _db.Permissions
-                .CountAsync(p => permissionIds.Contains(p.Id));
+            var role = await _db.Roles
+                .Include(r => r.RolePermissions)
+                .FirstOrDefaultAsync(r => r.Id == id)
+                ?? throw new NotFoundException("Role", id);
 
-            if (existingCount != permissionIds.Count)
-            {
-                // We use a generic ID label to satisfy the exception constructor
-                throw new NotFoundException("Permission", "provided list");
-            }
+            var permissionIds = await NormalizeAndValidatePermissionIdsAsync(request.PermissionIds);
+            await ReplacePermissionsAsync(role.Id, permissionIds);
+
+            await _db.SaveChangesAsync();
+            await tx.CommitAsync();
+
+            return await GetByIdAsync(id);
+        }
+        catch
+        {
+            await tx.RollbackAsync();
+            throw;
+        }
+    }
+
+    private async Task<List<Guid>> NormalizeAndValidatePermissionIdsAsync(IEnumerable<Guid> permissionIds)
+    {
+        var distinctIds = permissionIds.Distinct().ToList();
+
+        if (distinctIds.Count == 0)
+        {
+            return distinctIds;
         }
 
-        // 3. Clear and Update
-        _db.RolePermissions.RemoveRange(role.RolePermissions);
+        var existingCount = await _db.Permissions
+            .CountAsync(p => distinctIds.Contains(p.Id));
 
-        if (permissionIds.Any())
+        if (existingCount != distinctIds.Count)
         {
-            var newPermissions = permissionIds.Select(permId => new RolePermission
-            {
-                RoleId = id,
-                PermissionId = permId
-            });
-
-            await _db.RolePermissions.AddRangeAsync(newPermissions);
+            throw new NotFoundException("Permission", "provided list");
         }
 
-        // 4. Atomic Save
-        await _db.SaveChangesAsync();
+        return distinctIds;
+    }
 
-        return await GetByIdAsync(id);
+    private async Task ReplacePermissionsAsync(Guid roleId, IReadOnlyCollection<Guid> permissionIds)
+    {
+        var existingRolePermissions = await _db.RolePermissions
+            .Where(rp => rp.RoleId == roleId)
+            .ToListAsync();
+
+        _db.RolePermissions.RemoveRange(existingRolePermissions);
+
+        if (permissionIds.Count == 0)
+        {
+            return;
+        }
+
+        var newPermissions = permissionIds.Select(permId => new RolePermission
+        {
+            RoleId = roleId,
+            PermissionId = permId
+        });
+
+        await _db.RolePermissions.AddRangeAsync(newPermissions);
     }
 
     private static RoleDto MapToDto(Role r) => new(

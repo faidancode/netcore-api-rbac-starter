@@ -18,9 +18,10 @@ public class RolesServiceTests
     public async Task Create_ValidRole_ReturnsRoleDto()
     {
         await using var db = DbContextFactory.Create();
+        await EntityBuilder.SeedDefaultDataAsync(db);
         var svc = new RolesService(db);
 
-        var result = await svc.CreateAsync(new CreateRoleRequest("Editor", "Can edit content"));
+        var result = await svc.CreateAsync(new CreateRoleRequest("Editor", "Can edit content", []));
 
         result.Id.Should().NotBeEmpty();
         result.Name.Should().Be("Editor");
@@ -36,7 +37,24 @@ public class RolesServiceTests
         var svc = new RolesService(db);
 
         await Assert.ThrowsAsync<ConflictException>(() =>
-            svc.CreateAsync(new CreateRoleRequest("Admin", null)));
+            svc.CreateAsync(new CreateRoleRequest("Admin", null, [])));
+    }
+
+    [Fact]
+    public async Task Create_WithPermissions_ReturnsRoleDtoWithPermissions()
+    {
+        await using var db = DbContextFactory.Create();
+        await EntityBuilder.SeedDefaultDataAsync(db);
+        var svc = new RolesService(db);
+
+        var result = await svc.CreateAsync(new CreateRoleRequest(
+            "Editor",
+            "Can edit content",
+            [EntityBuilder.ReadEmployeePermId, EntityBuilder.ReadDepartmentPermId]));
+
+        result.Permissions.Should().HaveCount(2);
+        result.Permissions.Should().Contain(p => p.Action == "read" && p.Subject == "Employee");
+        result.Permissions.Should().Contain(p => p.Action == "read" && p.Subject == "Department");
     }
 
     // ── GetAll ────────────────────────────────────────────────────────────────
@@ -104,10 +122,14 @@ public class RolesServiceTests
         var svc = new RolesService(db);
 
         var result = await svc.UpdateAsync(EntityBuilder.ViewerRoleId,
-            new UpdateRoleRequest("SuperViewer", "Updated description"));
+            new UpdateRoleRequest(
+                "SuperViewer",
+                "Updated description",
+                [EntityBuilder.ReadEmployeePermId]));
 
         result.Name.Should().Be("SuperViewer");
         result.Description.Should().Be("Updated description");
+        result.Permissions.Should().ContainSingle(p => p.Action == "read" && p.Subject == "Employee");
     }
 
     [Fact]
@@ -118,7 +140,7 @@ public class RolesServiceTests
         var svc = new RolesService(db);
 
         await Assert.ThrowsAsync<ConflictException>(() =>
-            svc.UpdateAsync(EntityBuilder.ViewerRoleId, new UpdateRoleRequest("Admin", null)));
+            svc.UpdateAsync(EntityBuilder.ViewerRoleId, new UpdateRoleRequest("Admin", null, [])));
     }
 
     [Fact]
@@ -130,7 +152,7 @@ public class RolesServiceTests
 
         // Updating a role to its own name should not throw a conflict
         var result = await svc.UpdateAsync(EntityBuilder.AdminRoleId,
-            new UpdateRoleRequest("Admin", "New description"));
+            new UpdateRoleRequest("Admin", "New description", []));
 
         result.Name.Should().Be("Admin");
     }
@@ -228,15 +250,23 @@ public class RoleValidatorTests
     [Fact]
     public void Create_ValidRequest_PassesValidation()
     {
-        var result = _createValidator.TestValidate(new CreateRoleRequest("Manager", null));
+        var result = _createValidator.TestValidate(new CreateRoleRequest("Manager", null, []));
         result.ShouldNotHaveAnyValidationErrors();
     }
 
     [Fact]
     public void Create_EmptyName_FailsValidation()
     {
-        var result = _createValidator.TestValidate(new CreateRoleRequest("", null));
+        var result = _createValidator.TestValidate(new CreateRoleRequest("", null, []));
         result.ShouldHaveValidationErrorFor(x => x.Name);
+    }
+
+    [Fact]
+    public void Update_ValidRequest_PassesValidation()
+    {
+        var validator = new UpdateRoleRequestValidator();
+        var result = validator.TestValidate(new UpdateRoleRequest("Manager", null, []));
+        result.ShouldNotHaveAnyValidationErrors();
     }
 
     [Fact]

@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
 using netcore_api_rbac_starter.Common.Models;
+using netcore_api_rbac_starter.Modules.Auth.Dtos;
 using netcore_api_rbac_starter.Modules.Roles.Dtos;
 using netcore_api_rbac_starter.Tests.Helpers;
 
@@ -19,18 +20,24 @@ public class RolesIntegrationTests : IClassFixture<ApiFactory>
     {
         var client = _factory.CreateAdminClient();
         var response = await client.PostAsJsonAsync("/roles",
-            new { name = $"TestRole_{Guid.NewGuid():N}", description = "Test" });
+            new
+            {
+                name = $"TestRole_{Guid.NewGuid():N}",
+                description = "Test",
+                permissionIds = new[] { EntityBuilder.ReadEmployeePermId, EntityBuilder.ReadDepartmentPermId }
+            });
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         var body = await response.Content.ReadFromJsonAsync<Response<RoleDto>>();
         body!.Success.Should().BeTrue();
+        body.Data!.Permissions.Should().HaveCount(2);
     }
 
     [Fact]
     public async Task CreateRole_DuplicateName_Returns409()
     {
         var client = _factory.CreateAdminClient();
-        var response = await client.PostAsJsonAsync("/roles", new { name = "Admin" });
+        var response = await client.PostAsJsonAsync("/roles", new { name = "Admin", permissionIds = Array.Empty<Guid>() });
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
     }
 
@@ -38,7 +45,7 @@ public class RolesIntegrationTests : IClassFixture<ApiFactory>
     public async Task CreateRole_EmptyName_Returns400()
     {
         var client = _factory.CreateAdminClient();
-        var response = await client.PostAsJsonAsync("/roles", new { name = "" });
+        var response = await client.PostAsJsonAsync("/roles", new { name = "", permissionIds = Array.Empty<Guid>() });
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
@@ -60,6 +67,18 @@ public class RolesIntegrationTests : IClassFixture<ApiFactory>
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<Response<IEnumerable<RoleDto>>>();
         body!.Data.Should().HaveCountGreaterThan(0);
+    }
+
+    [Fact]
+    public async Task GetPermissions_Returns200WithMasterPermissions()
+    {
+        var client = _factory.CreateAdminClient();
+        var response = await client.GetAsync("/roles/permissions");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<Response<IEnumerable<PermissionDto>>>();
+        body!.Data.Should().Contain(p => p.Subject == "Department" && p.Action == "read");
+        body.Data.Should().Contain(p => p.Subject == "Employee" && p.Action == "create");
     }
 
     // ── GET /roles/{id} ───────────────────────────────────────────────────────
@@ -92,11 +111,16 @@ public class RolesIntegrationTests : IClassFixture<ApiFactory>
         var client = _factory.CreateAdminClient();
         var response = await client.PatchAsJsonAsync(
             $"/roles/{EntityBuilder.ViewerRoleId}",
-            new { description = "Read only access" });
+            new
+            {
+                description = "Read only access",
+                permissionIds = new[] { EntityBuilder.ReadDepartmentPermId, EntityBuilder.ReadEmployeePermId }
+            });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<Response<RoleDto>>();
         body!.Data!.Description.Should().Be("Read only access");
+        body.Data.Permissions.Should().HaveCount(2);
     }
 
     // ── DELETE /roles/{id} ────────────────────────────────────────────────────
@@ -108,7 +132,7 @@ public class RolesIntegrationTests : IClassFixture<ApiFactory>
 
         // Create a role to delete
         var createResp = await client.PostAsJsonAsync("/roles",
-            new { name = $"ToDelete_{Guid.NewGuid():N}" });
+            new { name = $"ToDelete_{Guid.NewGuid():N}", permissionIds = Array.Empty<Guid>() });
         var created = await createResp.Content.ReadFromJsonAsync<Response<RoleDto>>();
 
         var response = await client.DeleteAsync($"/roles/{created!.Data!.Id}");

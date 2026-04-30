@@ -17,7 +17,10 @@ public record CreateRoleRequest(
     string Name,
 
     [StringLength(250)]
-    string? Description
+    string? Description,
+
+    [Required]
+    IEnumerable<Guid> PermissionIds
 );
 
 public record UpdateRoleRequest(
@@ -25,7 +28,10 @@ public record UpdateRoleRequest(
     string? Name,
 
     [StringLength(250)]
-    string? Description
+    string? Description,
+
+    [Required]
+    IEnumerable<Guid> PermissionIds
 );
 
 

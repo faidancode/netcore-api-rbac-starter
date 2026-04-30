@@ -36,13 +36,23 @@ public record UpdateUserRequest(
     [EmailAddress]
     string? Email,
 
-    [StringLength(100, MinimumLength = 8)]
-    string? Password,
-
     Guid? RoleId,
 
     bool? IsActive
 );
+
+public class ChangeUserPasswordRequest
+{
+    public string? CurrentPassword { get; set; }
+
+    [Required]
+    [StringLength(100, MinimumLength = 8)]
+    public string NewPassword { get; set; } = default!;
+
+    [Required]
+    [Compare(nameof(NewPassword))]
+    public string ConfirmPassword { get; set; } = default!;
+}
 
 public record UserDto(
     Guid Id,
