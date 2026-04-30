@@ -5,6 +5,7 @@ namespace netcore_api_rbac_starter.Security;
 public interface ICurrentUserService
 {
     Guid UserId { get; }
+    string? RequestId { get; }
     string Email { get; }
     bool IsAuthenticated { get; }
     IEnumerable<string> Permissions { get; }
@@ -33,6 +34,9 @@ public class CurrentUserService : ICurrentUserService
             return Guid.TryParse(value, out var id) ? id : Guid.Empty;
         }
     }
+
+    public string? RequestId =>
+       _httpContextAccessor.HttpContext?.Items["X-Request-ID"]?.ToString();
 
     public string Email => User?.FindFirst(ClaimTypes.Email)?.Value ?? "";
 

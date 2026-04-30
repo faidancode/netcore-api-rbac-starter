@@ -1,22 +1,37 @@
 using FluentAssertions;
 using FluentValidation.TestHelper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using netcore_api_rbac_starter.Common.Exceptions;
 using netcore_api_rbac_starter.Entities;
 using netcore_api_rbac_starter.Modules.Departments;
 using netcore_api_rbac_starter.Modules.Departments.Dtos;
 using netcore_api_rbac_starter.Modules.Departments.Validators;
 using netcore_api_rbac_starter.Tests.Helpers;
+using Moq;
+using netcore_api_rbac_starter.Data;
+using netcore_api_rbac_starter.Security;
 
 namespace netcore_api_rbac_starter.Tests.Unit.Departments;
 
 public class DepartmentsServiceTests
 {
+    private static DepartmentsService CreateService(
+        AppDbContext db,
+        ICurrentUserService? currentUser = null)
+    {
+        return new DepartmentsService(
+            db,
+            currentUser ?? new Mock<ICurrentUserService>().Object,
+            NullLogger<DepartmentsService>.Instance);
+    }
+
     [Fact]
     public async Task Create_ValidRequest_ReturnsDepartmentDto()
     {
         await using var db = DbContextFactory.Create();
-        var svc = new DepartmentsService(db);
+        var svc = CreateService(db);
 
         var result = await svc.CreateAsync(new CreateDepartmentRequest("Finance", "Finance team"));
 
@@ -26,11 +41,37 @@ public class DepartmentsServiceTests
     }
 
     [Fact]
+    public async Task Create_LogsRequestAndUserContext()
+    {
+        await using var db = DbContextFactory.Create();
+
+        var loggerMock = new Mock<ILogger<DepartmentsService>>();
+        var currentUserMock = new Mock<ICurrentUserService>();
+        currentUserMock.SetupGet(x => x.RequestId).Returns("req-123");
+        currentUserMock.SetupGet(x => x.UserId).Returns(Guid.Parse("11111111-1111-1111-1111-111111111111"));
+
+        var svc = new DepartmentsService(db, currentUserMock.Object, loggerMock.Object);
+
+        await svc.CreateAsync(new CreateDepartmentRequest("Finance", "Finance team"));
+
+        loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((state, _) =>
+                    state.ToString()!.Contains("RequestId: req-123") &&
+                    state.ToString()!.Contains("UserId: 11111111-1111-1111-1111-111111111111")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
     public async Task Create_DuplicateName_ThrowsConflict()
     {
         await using var db = DbContextFactory.Create();
         await EntityBuilder.SeedDefaultDataAsync(db);
-        var svc = new DepartmentsService(db);
+        var svc = CreateService(db);
 
         await Assert.ThrowsAsync<ConflictException>(() =>
             svc.CreateAsync(new CreateDepartmentRequest("Engineering", "Duplicate")));
@@ -41,7 +82,7 @@ public class DepartmentsServiceTests
     {
         await using var db = DbContextFactory.Create();
         await EntityBuilder.SeedDefaultDataAsync(db);
-        var svc = new DepartmentsService(db);
+        var svc = CreateService(db);
 
         var pagedResult = await svc.GetAllAsync(new ListDepartmentQuery());
         var result = pagedResult.Items.ToList();
@@ -61,7 +102,7 @@ public class DepartmentsServiceTests
         dept.IsDeleted = true;
         await db.SaveChangesAsync();
 
-        var svc = new DepartmentsService(db);
+        var svc = CreateService(db);
         var pagedResult = await svc.GetAllAsync(new ListDepartmentQuery());
         var result = pagedResult.Items.ToList();
 
@@ -74,7 +115,7 @@ public class DepartmentsServiceTests
     {
         await using var db = DbContextFactory.Create();
         await EntityBuilder.SeedDefaultDataAsync(db);
-        var svc = new DepartmentsService(db);
+        var svc = CreateService(db);
 
         var result = await svc.GetByIdAsync(EntityBuilder.EngineeringId);
 
@@ -86,7 +127,7 @@ public class DepartmentsServiceTests
     public async Task GetById_NotFound_ThrowsNotFoundException()
     {
         await using var db = DbContextFactory.Create();
-        var svc = new DepartmentsService(db);
+        var svc = CreateService(db);
 
         await Assert.ThrowsAsync<NotFoundException>(() => svc.GetByIdAsync(Guid.NewGuid()));
     }
@@ -96,7 +137,7 @@ public class DepartmentsServiceTests
     {
         await using var db = DbContextFactory.Create();
         await EntityBuilder.SeedDefaultDataAsync(db);
-        var svc = new DepartmentsService(db);
+        var svc = CreateService(db);
 
         var result = await svc.UpdateAsync(EntityBuilder.EngineeringId,
             new UpdateDepartmentRequest("Platform", "Platform engineering"));
@@ -110,7 +151,7 @@ public class DepartmentsServiceTests
     {
         await using var db = DbContextFactory.Create();
         await EntityBuilder.SeedDefaultDataAsync(db);
-        var svc = new DepartmentsService(db);
+        var svc = CreateService(db);
 
         await Assert.ThrowsAsync<ConflictException>(() =>
             svc.UpdateAsync(EntityBuilder.EngineeringId,
@@ -121,7 +162,7 @@ public class DepartmentsServiceTests
     public async Task Update_NotFound_ThrowsNotFoundException()
     {
         await using var db = DbContextFactory.Create();
-        var svc = new DepartmentsService(db);
+        var svc = CreateService(db);
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             svc.UpdateAsync(Guid.NewGuid(), new UpdateDepartmentRequest("X", null)));
@@ -132,7 +173,7 @@ public class DepartmentsServiceTests
     {
         await using var db = DbContextFactory.Create();
         await EntityBuilder.SeedDefaultDataAsync(db);
-        var svc = new DepartmentsService(db);
+        var svc = CreateService(db);
 
         await svc.DeleteAsync(EntityBuilder.HrDeptId);
 
@@ -147,7 +188,7 @@ public class DepartmentsServiceTests
     public async Task Delete_NotFound_ThrowsNotFoundException()
     {
         await using var db = DbContextFactory.Create();
-        var svc = new DepartmentsService(db);
+        var svc = CreateService(db);
 
         await Assert.ThrowsAsync<NotFoundException>(() => svc.DeleteAsync(Guid.NewGuid()));
     }

@@ -1,4 +1,5 @@
 using netcore_api_rbac_starter.Common.Middleware;
+using Serilog;
 
 namespace netcore_api_rbac_starter;
 
@@ -7,6 +8,7 @@ public static class AppPipeline
     public static WebApplication UseAppPipeline(this WebApplication app)
     {
         app.UseMiddleware<ExceptionMiddleware>();
+        app.UseSerilogRequestLogging();
         if (app.Environment.IsDevelopment())
         {
             app.MapOpenApi();
@@ -30,6 +32,7 @@ public static class AppPipeline
         app.UseRateLimiter();
 
         app.UseAuthentication();
+
         app.UseAuthorization();
 
         app.UseMiddleware<IdempotencyMiddleware>();

@@ -20,6 +20,7 @@ internal sealed class TestCurrentUserService : ICurrentUserService
     }
 
     public Guid UserId { get; }
+    public string? RequestId => null;
     public string Email => "admin@example.com";
     public bool IsAuthenticated { get; }
     public IEnumerable<string> Permissions => Enumerable.Empty<string>();

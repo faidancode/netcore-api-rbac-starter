@@ -1,19 +1,56 @@
 using netcore_api_rbac_starter;
+using Serilog;
 
-var builder = AppBootstrap.CreateBuilder(args).AddAppServices();
-var app = builder.Build();
+Log.Logger = new LoggerConfiguration()
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
 
-if (AppBootstrap.IsMigrateCommand(args))
+try
 {
-    await MigrateCommand.RunAsync(app);
-    return;
-}
+    var builder = AppBootstrap.CreateBuilder(args).AddAppServices();
 
-if (AppBootstrap.IsSeedCommand(args))
+    builder.Host.UseSerilog((context, services, loggerConfiguration) =>
+    {
+        loggerConfiguration
+            .ReadFrom.Configuration(context.Configuration)
+            .ReadFrom.Services(services)
+            .Enrich.FromLogContext()
+            .WriteTo.Console();
+
+        if (!context.HostingEnvironment.IsDevelopment())
+        {
+            loggerConfiguration.WriteTo.File(
+                path: "logs/log-.txt",
+                rollingInterval: RollingInterval.Day,
+                retainedFileCountLimit: 14,
+                shared: true);
+        }
+    });
+
+    var app = builder.Build();
+
+    if (AppBootstrap.IsMigrateCommand(args))
+    {
+        await MigrateCommand.RunAsync(app);
+        return;
+    }
+
+    if (AppBootstrap.IsSeedCommand(args))
+    {
+        await SeedCommand.RunAsync(app);
+        return;
+    }
+
+    app.UseAppPipeline();
+    app.Run();
+}
+catch (Exception ex)
 {
-    await SeedCommand.RunAsync(app);
-    return;
+    Log.Fatal(ex, "Application terminated unexpectedly");
+    throw;
 }
-
-app.UseAppPipeline();
-app.Run();
+finally
+{
+    Log.CloseAndFlush();
+}

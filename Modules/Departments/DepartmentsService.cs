@@ -5,6 +5,7 @@ using netcore_api_rbac_starter.Modules.Departments.Dtos;
 using Microsoft.EntityFrameworkCore;
 using netcore_api_rbac_starter.Common.Models;
 using netcore_api_rbac_starter.Common.Extensions;
+using netcore_api_rbac_starter.Security;
 
 namespace netcore_api_rbac_starter.Modules.Departments;
 
@@ -21,10 +22,28 @@ public class DepartmentsService : IDepartmentsService
 {
     private readonly AppDbContext _db;
 
-    public DepartmentsService(AppDbContext db) => _db = db;
+    private readonly ICurrentUserService _currentUserService;
+
+    private readonly ILogger<DepartmentsService> _logger;
+
+    public DepartmentsService(
+        AppDbContext db,
+        ICurrentUserService currentUserService,
+        ILogger<DepartmentsService> logger)
+    {
+        _db = db;
+        _currentUserService = currentUserService;
+        _logger = logger;
+    }
 
     public async Task<DepartmentDto> CreateAsync(CreateDepartmentRequest request)
     {
+        var requestId = _currentUserService.RequestId;
+        var userId = _currentUserService.UserId;
+
+        _logger.LogInformation("RequestId: {RequestId}, UserId: {UserId}",
+            requestId, userId);
+            
         var exists = await _db.Departments.AnyAsync(d => d.Name == request.Name);
         if (exists)
             throw new ConflictException($"Department '{request.Name}' already exists.");
@@ -43,7 +62,7 @@ public class DepartmentsService : IDepartmentsService
         if (!string.IsNullOrEmpty(term))
         {
             var pattern = $"%{term}%";
-            dbQuery = dbQuery.Where(d => EF.Functions.ILike(d.Name, pattern) || 
+            dbQuery = dbQuery.Where(d => EF.Functions.ILike(d.Name, pattern) ||
                                          (d.Description != null && EF.Functions.ILike(d.Description, pattern)));
         }
 
