@@ -177,7 +177,7 @@ public class DepartmentValidatorTests
     [Fact]
     public void Create_TooLongName_FailsValidation()
     {
-        var name = new string('A', 201);
+        var name = new string('A', 51);
         var result = _createValidator.TestValidate(
             new CreateDepartmentRequest(name, "Finance team"));
         result.ShouldHaveValidationErrorFor(x => x.Name);
@@ -186,7 +186,7 @@ public class DepartmentValidatorTests
     [Fact]
     public void Create_TooLongDescription_FailsValidation()
     {
-        var description = new string('D', 501);
+        var description = new string('D', 251);
         var result = _createValidator.TestValidate(
             new CreateDepartmentRequest("Finance", description));
         result.ShouldHaveValidationErrorFor(x => x.Description);
@@ -202,7 +202,7 @@ public class DepartmentValidatorTests
     [Fact]
     public void Update_TooLongName_FailsValidation()
     {
-        var name = new string('A', 201);
+        var name = new string('A', 51);
         var result = _updateValidator.TestValidate(new UpdateDepartmentRequest(name, null));
         result.ShouldHaveValidationErrorFor(x => x.Name);
     }
@@ -210,7 +210,7 @@ public class DepartmentValidatorTests
     [Fact]
     public void Update_TooLongDescription_FailsValidation()
     {
-        var description = new string('D', 501);
+        var description = new string('D', 251);
         var result = _updateValidator.TestValidate(new UpdateDepartmentRequest(null, description));
         result.ShouldHaveValidationErrorFor(x => x.Description);
     }

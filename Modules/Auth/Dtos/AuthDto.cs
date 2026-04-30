@@ -1,13 +1,11 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace netcore_api_rbac_starter.Modules.Auth.Dtos;
 
 public record LoginRequest(
-    [Required][EmailAddress] string Email,
-    [Required] string Password
+    string Email,
+    string Password
 );
 
-public record RefreshRequest([Required] string RefreshToken);
+public record RefreshRequest(string RefreshToken);
 
 public record LoginResponse(
     string AccessToken,

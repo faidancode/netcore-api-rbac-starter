@@ -193,7 +193,7 @@ public class UsersIntegrationTests : IClassFixture<ApiFactory>
     public async Task UpdateUser_NotFound_Returns404()
     {
         var client = _factory.CreateAdminClient();
-        var response = await client.PatchAsJsonAsync($"/users/{Guid.NewGuid()}", new { name = "X" });
+        var response = await client.PatchAsJsonAsync($"/users/{Guid.NewGuid()}", new { name = "XY" });
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 

@@ -46,7 +46,7 @@ public class DepartmentsIntegrationTests : IClassFixture<ApiFactory>
     public async Task CreateDepartment_Unauthenticated_Returns401()
     {
         var response = await _factory.CreateAnonClient()
-            .PostAsJsonAsync("/departments", new { name = "X" });
+            .PostAsJsonAsync("/departments", new { name = "ValidName" });
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
@@ -54,7 +54,7 @@ public class DepartmentsIntegrationTests : IClassFixture<ApiFactory>
     public async Task CreateDepartment_ViewerRole_Returns403()
     {
         var response = await _factory.CreateViewerClient()
-            .PostAsJsonAsync("/departments", new { name = "X" });
+            .PostAsJsonAsync("/departments", new { name = "ValidName" });
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 

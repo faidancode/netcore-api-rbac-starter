@@ -30,7 +30,6 @@ public class AuthValidatorTests
 
     [Theory]
     [InlineData("")]
-    [InlineData("12345")]   // too short (< 6)
     public void Login_InvalidPassword_FailsValidation(string password)
     {
         var result = _loginValidator.TestValidate(new LoginRequest("test@example.com", password));

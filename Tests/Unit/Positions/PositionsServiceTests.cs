@@ -193,7 +193,7 @@ public class PositionValidatorTests
     [Fact]
     public void Create_TooLongName_FailsValidation()
     {
-        var name = new string('A', 201);
+        var name = new string('A', 51);
         var result = _createValidator.TestValidate(
             new CreatePositionRequest(name, "Staff position", Guid.NewGuid()));
         result.ShouldHaveValidationErrorFor(x => x.Name);
@@ -202,7 +202,7 @@ public class PositionValidatorTests
     [Fact]
     public void Create_TooLongDescription_FailsValidation()
     {
-        var description = new string('D', 501);
+        var description = new string('D', 251);
         var result = _createValidator.TestValidate(
             new CreatePositionRequest("Staff", description, Guid.NewGuid()));
         result.ShouldHaveValidationErrorFor(x => x.Description);
@@ -218,7 +218,7 @@ public class PositionValidatorTests
     [Fact]
     public void Update_TooLongName_FailsValidation()
     {
-        var name = new string('A', 201);
+        var name = new string('A', 51);
         var result = _updateValidator.TestValidate(new UpdatePositionRequest(name, null, null));
         result.ShouldHaveValidationErrorFor(x => x.Name);
     }
@@ -226,7 +226,7 @@ public class PositionValidatorTests
     [Fact]
     public void Update_TooLongDescription_FailsValidation()
     {
-        var description = new string('D', 501);
+        var description = new string('D', 251);
         var result = _updateValidator.TestValidate(new UpdatePositionRequest(null, description, null));
         result.ShouldHaveValidationErrorFor(x => x.Description);
     }

@@ -262,6 +262,13 @@ public class RoleValidatorTests
     }
 
     [Fact]
+    public void Create_TooShortName_FailsValidation()
+    {
+        var result = _createValidator.TestValidate(new CreateRoleRequest("AB", null, []));
+        result.ShouldHaveValidationErrorFor(x => x.Name);
+    }
+
+    [Fact]
     public void Update_ValidRequest_PassesValidation()
     {
         var validator = new UpdateRoleRequestValidator();

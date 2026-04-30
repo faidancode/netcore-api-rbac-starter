@@ -20,6 +20,10 @@ public class CreateEmployeeRequestValidator : AbstractValidator<CreateEmployeeRe
 
         RuleFor(x => x.DateOfJoining)
             .NotEmpty().WithMessage("Date of joining is required.");
+
+        RuleFor(x => x.DateOfActivePosition)
+            .Must(date => !date.HasValue || date.Value <= DateOnly.FromDateTime(DateTime.UtcNow))
+            .WithMessage("Date of active position cannot be in the future.");
     }
 }
 
@@ -34,5 +38,17 @@ public class UpdateEmployeeRequestValidator : AbstractValidator<UpdateEmployeeRe
         RuleFor(x => x.Nip)
             .MaximumLength(50).WithMessage("NIP must not exceed 50 characters.")
             .When(x => x.Nip != null);
+
+        RuleFor(x => x.PositionId)
+            .NotEmpty().WithMessage("PositionId cannot be empty.")
+            .When(x => x.PositionId.HasValue);
+
+        RuleFor(x => x.DepartmentId)
+            .NotEmpty().WithMessage("DepartmentId cannot be empty.")
+            .When(x => x.DepartmentId.HasValue);
+
+        RuleFor(x => x.ManagerId)
+            .NotEmpty().WithMessage("ManagerId cannot be empty.")
+            .When(x => x.ManagerId.HasValue);
     }
 }

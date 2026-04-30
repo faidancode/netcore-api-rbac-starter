@@ -11,6 +11,22 @@ using netcore_api_rbac_starter.Security;
 
 namespace netcore_api_rbac_starter.Tests.Unit.Users;
 
+internal sealed class TestCurrentUserService : ICurrentUserService
+{
+    public TestCurrentUserService(Guid userId, bool isAuthenticated)
+    {
+        UserId = userId;
+        IsAuthenticated = isAuthenticated;
+    }
+
+    public Guid UserId { get; }
+    public string Email => "admin@example.com";
+    public bool IsAuthenticated { get; }
+    public IEnumerable<string> Permissions => Enumerable.Empty<string>();
+
+    public bool HasPermission(string action, string subject) => false;
+}
+
 public class UsersServiceTests
 {
     // ── Create ────────────────────────────────────────────────────────────────
@@ -163,7 +179,12 @@ public class UsersServiceTests
         var svc = new UsersService(db);
 
         await svc.ChangePasswordAsync(EntityBuilder.AdminUserId,
-            new ChangeUserPasswordRequest(null, "NewPass@456!", "NewPass@456!"));
+            new ChangeUserPasswordRequest
+            {
+                CurrentPassword = null,
+                NewPassword = "NewPass@456!",
+                ConfirmPassword = "NewPass@456!"
+            });
 
         var user = db.Users.First(u => u.Id == EntityBuilder.AdminUserId);
         BCrypt.Net.BCrypt.Verify("NewPass@456!", user.PasswordHash).Should().BeTrue();
@@ -179,7 +200,12 @@ public class UsersServiceTests
 
         await Assert.ThrowsAsync<UnauthorizedException>(() =>
             svc.ChangePasswordAsync(EntityBuilder.AdminUserId,
-                new ChangeUserPasswordRequest("WrongPassword", "NewPass@456!", "NewPass@456!")));
+                new ChangeUserPasswordRequest
+                {
+                    CurrentPassword = "WrongPassword",
+                    NewPassword = "NewPass@456!",
+                    ConfirmPassword = "NewPass@456!"
+                }));
     }
 
     [Fact]
@@ -272,7 +298,7 @@ public class UserValidatorTests
     [Fact]
     public void Create_TooLongName_FailsValidation()
     {
-        var name = new string('A', 201);
+        var name = new string('A', 101);
         var result = _createValidator.TestValidate(
             new CreateUserRequest(name, "alice@example.com", "Password1!", null));
         result.ShouldHaveValidationErrorFor(x => x.Name);
@@ -316,7 +342,12 @@ public class UserValidatorTests
     {
         var validator = new ChangeUserPasswordRequestValidator();
         var result = validator.TestValidate(
-            new ChangeUserPasswordRequest("Current1!", "Password1!", "Password1!"));
+            new ChangeUserPasswordRequest
+            {
+                CurrentPassword = "Current1!",
+                NewPassword = "Password1!",
+                ConfirmPassword = "Password1!"
+            });
         result.ShouldNotHaveAnyValidationErrors();
     }
 
@@ -325,23 +356,12 @@ public class UserValidatorTests
     {
         var validator = new ChangeUserPasswordRequestValidator();
         var result = validator.TestValidate(
-            new ChangeUserPasswordRequest("Current1!", "Password1!", "Password2!"));
+            new ChangeUserPasswordRequest
+            {
+                CurrentPassword = "Current1!",
+                NewPassword = "Password1!",
+                ConfirmPassword = "Password2!"
+            });
         result.ShouldHaveValidationErrorFor(x => x.ConfirmPassword);
-    }
-
-    private sealed class TestCurrentUserService : ICurrentUserService
-    {
-        public TestCurrentUserService(Guid userId, bool isAuthenticated)
-        {
-            UserId = userId;
-            IsAuthenticated = isAuthenticated;
-        }
-
-        public Guid UserId { get; }
-        public string Email => "admin@example.com";
-        public bool IsAuthenticated { get; }
-        public IEnumerable<string> Permissions => Enumerable.Empty<string>();
-
-        public bool HasPermission(string action, string subject) => false;
     }
 }

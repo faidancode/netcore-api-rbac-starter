@@ -9,13 +9,14 @@ public class CreatePositionRequestValidator : AbstractValidator<CreatePositionRe
     {
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("Position name is required.")
-            .MaximumLength(200).WithMessage("Name must not exceed 200 characters.");
+            .MinimumLength(3).WithMessage("Name must be at least 3 characters.")
+            .MaximumLength(50).WithMessage("Name must not exceed 50 characters.");
 
         RuleFor(x => x.DepartmentId)
             .NotEmpty().WithMessage("DepartmentId is required.");
 
         RuleFor(x => x.Description)
-            .MaximumLength(500).WithMessage("Description must not exceed 500 characters.")
+            .MaximumLength(250).WithMessage("Description must not exceed 250 characters.")
             .When(x => x.Description != null);
     }
 }
@@ -25,11 +26,12 @@ public class UpdatePositionRequestValidator : AbstractValidator<UpdatePositionRe
     public UpdatePositionRequestValidator()
     {
         RuleFor(x => x.Name)
-            .MaximumLength(200).WithMessage("Name must not exceed 200 characters.")
+            .MinimumLength(3).WithMessage("Name must be at least 3 characters.")
+            .MaximumLength(50).WithMessage("Name must not exceed 50 characters.")
             .When(x => x.Name != null);
 
         RuleFor(x => x.Description)
-            .MaximumLength(500).WithMessage("Description must not exceed 500 characters.")
+            .MaximumLength(250).WithMessage("Description must not exceed 250 characters.")
             .When(x => x.Description != null);
     }
 }

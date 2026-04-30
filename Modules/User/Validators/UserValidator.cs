@@ -9,7 +9,8 @@ public class CreateUserRequestValidator : AbstractValidator<CreateUserRequest>
     {
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("Name is required.")
-            .MaximumLength(200).WithMessage("Name must not exceed 200 characters.");
+            .MinimumLength(2).WithMessage("Name must be at least 2 characters.")
+            .MaximumLength(100).WithMessage("Name must not exceed 100 characters.");
 
         RuleFor(x => x.Email)
             .NotEmpty().WithMessage("Email is required.")
@@ -18,7 +19,11 @@ public class CreateUserRequestValidator : AbstractValidator<CreateUserRequest>
 
         RuleFor(x => x.Password)
             .NotEmpty().WithMessage("Password is required.")
-            .MinimumLength(6).WithMessage("Password must be at least 6 characters.");
+            .MinimumLength(8).WithMessage("Password must be at least 8 characters.");
+
+        RuleFor(x => x.RoleId)
+            .NotEmpty().WithMessage("RoleId is required.")
+            .When(x => x.RoleId.HasValue);
     }
 }
 
@@ -27,7 +32,8 @@ public class UpdateUserRequestValidator : AbstractValidator<UpdateUserRequest>
     public UpdateUserRequestValidator()
     {
         RuleFor(x => x.Name)
-            .MaximumLength(200).WithMessage("Name must not exceed 200 characters.")
+            .MinimumLength(2).WithMessage("Name must be at least 2 characters.")
+            .MaximumLength(100).WithMessage("Name must not exceed 100 characters.")
             .When(x => x.Name != null);
 
         RuleFor(x => x.Email)

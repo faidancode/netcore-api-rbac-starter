@@ -9,6 +9,7 @@ public class CreateRoleRequestValidator : AbstractValidator<CreateRoleRequest>
     {
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("Role name is required.")
+            .MinimumLength(3).WithMessage("Role name must be at least 3 characters.")
             .MaximumLength(50).WithMessage("Role name must not exceed 50 characters.");
 
         RuleFor(x => x.Description)
@@ -26,6 +27,7 @@ public class UpdateRoleRequestValidator : AbstractValidator<UpdateRoleRequest>
     {
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("Role name cannot be empty.")
+            .MinimumLength(3).WithMessage("Role name must be at least 3 characters.")
             .MaximumLength(50).WithMessage("Role name must not exceed 50 characters.")
             .When(x => x.Name != null);
 

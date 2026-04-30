@@ -1,3 +1,5 @@
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -5,12 +7,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using netcore_api_rbac_starter.Data;
 using netcore_api_rbac_starter.Modules.Auth;
+using netcore_api_rbac_starter.Modules.Dashboard;
 using netcore_api_rbac_starter.Modules.Departments;
 using netcore_api_rbac_starter.Modules.Positions;
 using netcore_api_rbac_starter.Modules.Roles;
 using netcore_api_rbac_starter.Modules.Users;
 using netcore_api_rbac_starter.Modules.Employees;
 using netcore_api_rbac_starter.Security;
+using netcore_api_rbac_starter.Modules.Auth.Validators;
 
 namespace netcore_api_rbac_starter;
 
@@ -26,6 +30,8 @@ public static class AppServiceConfiguration
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen();
         services.AddControllers();
+        services.AddFluentValidationAutoValidation();
+        services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
         services.AddHttpContextAccessor();
 
         services.AddCors(options =>
@@ -42,6 +48,7 @@ public static class AppServiceConfiguration
         services.AddScoped<IUsersService, UsersService>();
         services.AddScoped<IRolesService, RolesService>();
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<IDepartmentsService, DepartmentsService>();
         services.AddScoped<IPositionsService, PositionsService>();
         services.AddScoped<IEmployeesService, EmployeesService>();

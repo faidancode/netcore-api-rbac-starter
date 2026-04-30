@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations;
 using netcore_api_rbac_starter.Modules.Auth.Dtos;
 
 namespace netcore_api_rbac_starter.Modules.Roles.Dtos;
@@ -12,32 +11,24 @@ public record ListRoleQuery(
 );
 
 public record CreateRoleRequest(
-    [Required(AllowEmptyStrings = false)]
-    [StringLength(50, MinimumLength = 3)]
     string Name,
 
-    [StringLength(250)]
     string? Description,
 
-    [Required]
     IEnumerable<Guid> PermissionIds
 );
 
 public record UpdateRoleRequest(
-    [StringLength(50, MinimumLength = 3)]
     string? Name,
 
-    [StringLength(250)]
     string? Description,
 
-    [Required]
     IEnumerable<Guid> PermissionIds
 );
 
 
 public record AssignPermissionsRequest(
-    [Required]
-    IEnumerable<Guid> PermissionIds // Removed MinLength to allow clearing
+    IEnumerable<Guid> PermissionIds
 );
 
 public record RoleDto(

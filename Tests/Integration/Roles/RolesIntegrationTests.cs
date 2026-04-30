@@ -52,7 +52,9 @@ public class RolesIntegrationTests : IClassFixture<ApiFactory>
     [Fact]
     public async Task CreateRole_Unauthenticated_Returns401()
     {
-        var response = await _factory.CreateAnonClient().PostAsJsonAsync("/roles", new { name = "X" });
+        var response = await _factory.CreateAnonClient().PostAsJsonAsync(
+            "/roles",
+            new { name = "ValidRole", permissionIds = Array.Empty<Guid>() });
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
