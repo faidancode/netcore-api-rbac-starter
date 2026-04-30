@@ -3,6 +3,7 @@ using netcore_api_rbac_starter.Modules.Auth.Dtos;
 using netcore_api_rbac_starter.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace netcore_api_rbac_starter.Modules.Auth;
 
@@ -20,7 +21,7 @@ public class AuthController : ControllerBase
         _currentUser = currentUser;
     }
 
-    /// <summary>Login with email and password</summary>
+    [EnableRateLimiting("login")]
     [HttpPost("login")]
     [AllowAnonymous]
     public async Task<ActionResult<Response<LoginResponse>>> Login([FromBody] LoginRequest request)
@@ -29,7 +30,6 @@ public class AuthController : ControllerBase
         return Ok(Response<LoginResponse>.Ok(result, "Login successful."));
     }
 
-    /// <summary>Refresh access token using a valid refresh token</summary>
     [HttpPost("refresh")]
     [AllowAnonymous]
     public async Task<ActionResult<Response<LoginResponse>>> Refresh([FromBody] RefreshRequest request)
@@ -38,7 +38,6 @@ public class AuthController : ControllerBase
         return Ok(Response<LoginResponse>.Ok(result, "Token refreshed."));
     }
 
-    /// <summary>Get current authenticated user profile</summary>
     [HttpPost("me")]
     [Authorize]
     public async Task<ActionResult<Response<MeResponse>>> Me()
@@ -47,7 +46,6 @@ public class AuthController : ControllerBase
         return Ok(Response<MeResponse>.Ok(result));
     }
 
-    /// <summary>Get current user permissions</summary>
     [HttpGet("me/permissions")]
     [Authorize]
     public async Task<ActionResult<Response<IEnumerable<PermissionDto>>>> GetMyPermissions()

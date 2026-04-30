@@ -15,6 +15,7 @@ using netcore_api_rbac_starter.Modules.Users;
 using netcore_api_rbac_starter.Modules.Employees;
 using netcore_api_rbac_starter.Security;
 using netcore_api_rbac_starter.Modules.Auth.Validators;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace netcore_api_rbac_starter;
 
@@ -72,7 +73,23 @@ public static class AppServiceConfiguration
                 opt.UseNpgsql(config.GetConnectionString("Default")));
         }
 
-        // ✅ JWT Options (clean)
+        services.AddRateLimiter(options =>
+        {
+            options.AddFixedWindowLimiter("global", opt =>
+            {
+                opt.PermitLimit = 100; // 100 request
+                opt.Window = TimeSpan.FromMinutes(1);
+                opt.QueueLimit = 0;
+            });
+
+            options.AddFixedWindowLimiter("login", opt =>
+            {
+                opt.PermitLimit = 5; // 5 request
+                opt.Window = TimeSpan.FromMinutes(1);
+                opt.QueueLimit = 0;
+            });
+        });
+
         services.Configure<JwtOptions>(config.GetSection("Jwt"));
 
         services
@@ -99,6 +116,8 @@ public static class AppServiceConfiguration
                     ClockSkew = TimeSpan.Zero
                 };
             });
+
+
 
         return builder;
     }
