@@ -11,3 +11,13 @@ seed:
 
 watch:
 	dotnet watch run --launch-profile http
+
+
+up:
+	docker-compose up -d
+
+down:
+	docker-compose down -v
+
+logs:
+	docker-compose logs -f postgres	

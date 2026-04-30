@@ -22,15 +22,7 @@ public class AppDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.ApplyConfiguration(new UserConfiguration());
-        modelBuilder.ApplyConfiguration(new RoleConfiguration());
-        modelBuilder.ApplyConfiguration(new PermissionConfiguration());
-        modelBuilder.ApplyConfiguration(new RolePermissionConfiguration());
-        modelBuilder.ApplyConfiguration(new RefreshTokenConfiguration());
-        modelBuilder.ApplyConfiguration(new DepartmentConfiguration());
-        modelBuilder.ApplyConfiguration(new PositionConfiguration());
-        modelBuilder.ApplyConfiguration(new EmployeeConfiguration());
-        modelBuilder.ApplyConfiguration(new PositionHistoryConfiguration());
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

@@ -1,6 +1,7 @@
 namespace netcore_api_rbac_starter.Entities;
 
 public enum Gender { Male, Female }
+public enum EmploymentType { Permanent, Contract }
 public enum EmployeeStatus { Active, Inactive, Terminated, OnLeave }
 
 public class Employee : BaseEntity
@@ -8,6 +9,7 @@ public class Employee : BaseEntity
     public string FullName { get; set; } = string.Empty;
     public string Nip { get; set; } = string.Empty;         // Employee ID number (unique)
     public Gender Gender { get; set; }
+    public EmploymentType EmploymentType { get; set; } = EmploymentType.Contract;
     public EmployeeStatus EmployeeStatus { get; set; } = EmployeeStatus.Active;
     public bool IsActive { get; set; } = true;
     public DateOnly DateOfJoining { get; set; }

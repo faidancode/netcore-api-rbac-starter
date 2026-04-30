@@ -4,6 +4,8 @@ public record DashboardSummaryDto(
     int TotalDepartments,
     int TotalPositions,
     int TotalEmployees,
+    int TotalPermanentEmployees,
+    int TotalContractEmployees,
     int TotalMaleEmployees,
     int TotalFemaleEmployees
 );

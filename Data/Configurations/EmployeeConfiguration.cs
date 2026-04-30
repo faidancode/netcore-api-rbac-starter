@@ -15,6 +15,7 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
         builder.Property(e => e.FullName).HasColumnName("full_name").HasMaxLength(300).IsRequired();
         builder.Property(e => e.Nip).HasColumnName("nip").HasMaxLength(50).IsRequired();
         builder.Property(e => e.Gender).HasColumnName("gender").HasConversion<string>().HasMaxLength(10);
+        builder.Property(e => e.EmploymentType).HasColumnName("employment_type").HasConversion<string>().HasMaxLength(20);
         builder.Property(e => e.EmployeeStatus).HasColumnName("employee_status").HasConversion<string>().HasMaxLength(20);
         builder.Property(e => e.IsActive).HasColumnName("is_active").HasDefaultValue(true);
         builder.Property(e => e.DateOfJoining).HasColumnName("date_of_joining");

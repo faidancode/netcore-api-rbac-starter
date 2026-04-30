@@ -1,12 +1,14 @@
-using System;
+﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace netcore_api_rbac_starter.Migrations
 {
-    public partial class InitialCreate : Migration
+    /// <inheritdoc />
+    public partial class Initial : Migration
     {
+        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
@@ -63,15 +65,13 @@ namespace netcore_api_rbac_starter.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "users",
+                name: "positions",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
-                    email = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    password_hash = table.Column<string>(type: "text", nullable: false),
-                    is_active = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
-                    role_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    department_id = table.Column<Guid>(type: "uuid", nullable: false),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     is_deleted = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
@@ -79,13 +79,13 @@ namespace netcore_api_rbac_starter.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_users", x => x.id);
+                    table.PrimaryKey("PK_positions", x => x.id);
                     table.ForeignKey(
-                        name: "FK_users_roles_role_id",
-                        column: x => x.role_id,
-                        principalTable: "roles",
+                        name: "FK_positions_departments_department_id",
+                        column: x => x.department_id,
+                        principalTable: "departments",
                         principalColumn: "id",
-                        onDelete: ReferentialAction.SetNull);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -113,13 +113,15 @@ namespace netcore_api_rbac_starter.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "positions",
+                name: "users",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
-                    description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
-                    department_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    email = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    password_hash = table.Column<string>(type: "text", nullable: false),
+                    is_active = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
+                    role_id = table.Column<Guid>(type: "uuid", nullable: true),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     is_deleted = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
@@ -127,35 +129,13 @@ namespace netcore_api_rbac_starter.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_positions", x => x.id);
+                    table.PrimaryKey("PK_users", x => x.id);
                     table.ForeignKey(
-                        name: "FK_positions_departments_department_id",
-                        column: x => x.department_id,
-                        principalTable: "departments",
+                        name: "FK_users_roles_role_id",
+                        column: x => x.role_id,
+                        principalTable: "roles",
                         principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "refresh_tokens",
-                columns: table => new
-                {
-                    id = table.Column<Guid>(type: "uuid", nullable: false),
-                    token = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
-                    expires_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    is_revoked = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
-                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    user_id = table.Column<Guid>(type: "uuid", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_refresh_tokens", x => x.id);
-                    table.ForeignKey(
-                        name: "FK_refresh_tokens_users_user_id",
-                        column: x => x.user_id,
-                        principalTable: "users",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.SetNull);
                 });
 
             migrationBuilder.CreateTable(
@@ -166,6 +146,7 @@ namespace netcore_api_rbac_starter.Migrations
                     full_name = table.Column<string>(type: "character varying(300)", maxLength: 300, nullable: false),
                     nip = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     gender = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
+                    employment_type = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
                     employee_status = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
                     is_active = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
                     date_of_joining = table.Column<DateOnly>(type: "date", nullable: false),
@@ -206,6 +187,28 @@ namespace netcore_api_rbac_starter.Migrations
                         principalTable: "users",
                         principalColumn: "id",
                         onDelete: ReferentialAction.SetNull);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "refresh_tokens",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    token = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    expires_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    is_revoked = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    user_id = table.Column<Guid>(type: "uuid", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_refresh_tokens", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_refresh_tokens_users_user_id",
+                        column: x => x.user_id,
+                        principalTable: "users",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -334,17 +337,35 @@ namespace netcore_api_rbac_starter.Migrations
                 column: "role_id");
         }
 
+        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(name: "position_histories");
-            migrationBuilder.DropTable(name: "refresh_tokens");
-            migrationBuilder.DropTable(name: "role_permissions");
-            migrationBuilder.DropTable(name: "employees");
-            migrationBuilder.DropTable(name: "permissions");
-            migrationBuilder.DropTable(name: "positions");
-            migrationBuilder.DropTable(name: "users");
-            migrationBuilder.DropTable(name: "departments");
-            migrationBuilder.DropTable(name: "roles");
+            migrationBuilder.DropTable(
+                name: "position_histories");
+
+            migrationBuilder.DropTable(
+                name: "refresh_tokens");
+
+            migrationBuilder.DropTable(
+                name: "role_permissions");
+
+            migrationBuilder.DropTable(
+                name: "employees");
+
+            migrationBuilder.DropTable(
+                name: "permissions");
+
+            migrationBuilder.DropTable(
+                name: "positions");
+
+            migrationBuilder.DropTable(
+                name: "users");
+
+            migrationBuilder.DropTable(
+                name: "departments");
+
+            migrationBuilder.DropTable(
+                name: "roles");
         }
     }
 }
