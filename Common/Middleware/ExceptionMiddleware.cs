@@ -1,5 +1,6 @@
 using System.Text.Json;
 using netcore_api_rbac_starter.Common.Exceptions;
+using netcore_api_rbac_starter.Common.Models;
 
 namespace netcore_api_rbac_starter.Common.Middleware;
 
@@ -29,27 +30,20 @@ public class ExceptionMiddleware
 
     private static async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
-        var (statusCode, message) = exception switch
+        var (statusCode, message, code) = exception switch
         {
-            AppException appEx => (appEx.StatusCode, appEx.Message),
-            _ => (500, "An unexpected error occurred.")
+            AppException appEx => (appEx.StatusCode, appEx.Message, appEx.Code),
+            _ => (500, "An unexpected error occurred.", "INTERNAL_ERROR")
         };
 
         context.Response.ContentType = "application/json";
         context.Response.StatusCode = statusCode;
 
-        var response = new
-        {
-            success = false,
-            message,
-            statusCode
-        };
+        var response = Response<object>.Fail(
+            message: message,
+            code: code
+        );
 
-        var json = JsonSerializer.Serialize(response, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        });
-
-        await context.Response.WriteAsync(json);
+        await context.Response.WriteAsJsonAsync(response);
     }
 }

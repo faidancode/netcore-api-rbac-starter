@@ -4,6 +4,7 @@ public class Response<T>
 {
     public bool Success { get; init; }
     public string? Message { get; init; }
+    public string? Code { get; init; }
     public T? Data { get; init; }
     public PaginationMeta? Meta { get; init; }
     public object? Errors { get; init; }
@@ -14,8 +15,14 @@ public class Response<T>
     public static Response<T> OkMessage(string message)
         => new() { Success = true, Message = message };
 
-    public static Response<T> Fail(string message, object? errors = null)
-        => new() { Success = false, Message = message, Errors = errors };
+    public static Response<T> Fail(string message, object? errors = null, string? code = null)
+        => new()
+        {
+            Success = false,
+            Message = message,
+            Errors = errors,
+            Code = code
+        };
 }
 
 public class PaginationMeta
