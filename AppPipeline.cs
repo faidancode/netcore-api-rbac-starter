@@ -7,8 +7,12 @@ public static class AppPipeline
 {
     public static WebApplication UseAppPipeline(this WebApplication app)
     {
+        // 1. Request ID paling awal
+        app.UseMiddleware<RequestIdMiddleware>();
+
+        // 2. Exception handling (wrap semua setelah ini)
         app.UseMiddleware<ExceptionMiddleware>();
-        app.UseSerilogRequestLogging();
+
         if (app.Environment.IsDevelopment())
         {
             app.MapOpenApi();
@@ -25,16 +29,21 @@ public static class AppPipeline
             app.UseHttpsRedirection();
         }
 
-        app.UseMiddleware<RequestIdMiddleware>();
-
         app.UseCors("AngularApp");
 
         app.UseRateLimiter();
 
+        // 3. Auth dulu
         app.UseAuthentication();
-
         app.UseAuthorization();
 
+        // 4. Tambahkan RequestId/UserId ke log context sebelum request logging
+        app.UseMiddleware<LoggingContextMiddleware>();
+
+        // 5. Serilog request logging cukup sekali, setelah context lengkap
+        app.UseSerilogRequestLogging();
+
+        // 6. Idempotency (butuh user + requestId)
         app.UseMiddleware<IdempotencyMiddleware>();
 
         app.MapControllers();

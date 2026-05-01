@@ -1,6 +1,8 @@
 using System.Text.Json;
 using netcore_api_rbac_starter.Common.Exceptions;
 using netcore_api_rbac_starter.Common.Models;
+using Serilog.Context;
+using System.Security.Claims;
 
 namespace netcore_api_rbac_starter.Common.Middleware;
 
@@ -23,9 +25,43 @@ public class ExceptionMiddleware
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unhandled exception: {Message}", ex.Message);
+            LogException(context, ex);
             await HandleExceptionAsync(context, ex);
         }
+    }
+
+    private void LogException(HttpContext context, Exception ex)
+    {
+        var requestId = ResolveRequestId(context);
+        var userId = ResolveUserId(context);
+
+        using (LogContext.PushProperty("RequestId", requestId))
+        using (LogContext.PushProperty("UserId", userId))
+        {
+            _logger.LogError(ex,
+                "Unhandled exception. {Method} {Path} responded 500. TraceId: {TraceId} RequestId: {RequestId} UserId: {UserId}",
+                context.Request.Method,
+                context.Request.Path,
+                context.TraceIdentifier,
+                requestId,
+                userId
+            );
+        }
+    }
+
+    private static string ResolveRequestId(HttpContext context)
+    {
+        return context.Items.TryGetValue("X-Request-ID", out var requestIdObj) && requestIdObj is string requestId && !string.IsNullOrWhiteSpace(requestId)
+            ? requestId
+            : context.Request.Headers["X-Request-ID"].FirstOrDefault()
+              ?? context.TraceIdentifier;
+    }
+
+    private static string ResolveUserId(HttpContext context)
+    {
+        return context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value
+               ?? context.User?.FindFirst("sub")?.Value
+               ?? "anonymous";
     }
 
     private static async Task HandleExceptionAsync(HttpContext context, Exception exception)
