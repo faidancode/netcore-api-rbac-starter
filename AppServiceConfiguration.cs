@@ -14,8 +14,9 @@ using netcore_api_rbac_starter.Modules.Roles;
 using netcore_api_rbac_starter.Modules.Users;
 using netcore_api_rbac_starter.Modules.Employees;
 using netcore_api_rbac_starter.Security;
-using netcore_api_rbac_starter.Modules.Auth.Validators;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.Mvc;
+using netcore_api_rbac_starter.Common.Models;
 
 namespace netcore_api_rbac_starter;
 
@@ -31,8 +32,26 @@ public static class AppServiceConfiguration
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen();
         services.AddControllers();
+
+        services.Configure<ApiBehaviorOptions>(options =>
+        {
+            options.InvalidModelStateResponseFactory = context =>
+            {
+                var errors = context.ModelState
+                    .Where(x => x.Value?.Errors.Count > 0)
+                    .ToDictionary(
+                        kvp => kvp.Key,
+                        kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
+                    );
+
+                return new BadRequestObjectResult(
+                    Response<object>.Fail("Validation failed", errors)
+                );
+            };
+        });
+
         services.AddFluentValidationAutoValidation();
-        services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
+        services.AddValidatorsFromAssemblyContaining<Program>();
         services.AddHttpContextAccessor();
 
         services.AddCors(options =>

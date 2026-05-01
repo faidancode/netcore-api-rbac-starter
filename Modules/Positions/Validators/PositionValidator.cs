@@ -35,3 +35,16 @@ public class UpdatePositionRequestValidator : AbstractValidator<UpdatePositionRe
             .When(x => x.Description != null);
     }
 }
+
+public class PositionListQueryValidator : AbstractValidator<ListPositionQuery>
+{
+    public PositionListQueryValidator()
+    {
+        RuleFor(x => x.Page).ValidPage();
+        RuleFor(x => x.Limit).ValidLimit();
+
+        RuleFor(x => x.Sort)
+            .Matches(@"^[a-zA-Z]+:(asc|desc)$")
+            .When(x => !string.IsNullOrEmpty(x.Sort));
+    }
+}

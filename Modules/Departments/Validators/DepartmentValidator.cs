@@ -29,4 +29,17 @@ public class UpdateDepartmentRequestValidator : AbstractValidator<UpdateDepartme
         RuleFor(x => x.Description)
             .MaximumLength(250).WithMessage("Description must not exceed 250 characters.");
     }
+
+    public class DepartmentListQueryValidator : AbstractValidator<ListDepartmentQuery>
+    {
+        public DepartmentListQueryValidator()
+        {
+            RuleFor(x => x.Page).ValidPage();
+            RuleFor(x => x.Limit).ValidLimit();
+
+            RuleFor(x => x.Sort)
+                .Matches(@"^[a-zA-Z]+:(asc|desc)$")
+                .When(x => !string.IsNullOrEmpty(x.Sort));
+        }
+    }
 }

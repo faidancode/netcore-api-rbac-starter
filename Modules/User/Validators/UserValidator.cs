@@ -56,3 +56,16 @@ public class ChangeUserPasswordRequestValidator : AbstractValidator<ChangeUserPa
             .Equal(x => x.NewPassword).WithMessage("Confirm password must match new password.");
     }
 }
+
+public class UserListQueryValidator : AbstractValidator<ListUsersQuery>
+{
+    public UserListQueryValidator()
+    {
+        RuleFor(x => x.Page).ValidPage();
+        RuleFor(x => x.Limit).ValidLimit();
+
+        RuleFor(x => x.Sort)
+            .Matches(@"^[a-zA-Z]+:(asc|desc)$")
+            .When(x => !string.IsNullOrEmpty(x.Sort));
+    }
+}

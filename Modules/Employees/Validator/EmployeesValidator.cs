@@ -52,3 +52,16 @@ public class UpdateEmployeeRequestValidator : AbstractValidator<UpdateEmployeeRe
             .When(x => x.ManagerId.HasValue);
     }
 }
+
+public class EmployeeListQueryValidator : AbstractValidator<EmployeeListQuery>
+{
+    public EmployeeListQueryValidator()
+    {
+        RuleFor(x => x.Page).ValidPage();
+        RuleFor(x => x.Limit).ValidLimit();
+
+        RuleFor(x => x.Sort)
+            .Matches(@"^[a-zA-Z]+:(asc|desc)$")
+            .When(x => !string.IsNullOrEmpty(x.Sort));
+    }
+}
