@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using netcore_api_rbac_starter.Common.Middleware;
 using Serilog;
 
@@ -47,6 +48,13 @@ public static class AppPipeline
         app.UseMiddleware<IdempotencyMiddleware>();
 
         app.MapControllers();
+        app.MapHealthChecks("/health"); // ✅ lightweight
+
+        app.MapHealthChecks("/ready", new HealthCheckOptions
+        {
+            Predicate = _ => true,
+            ResponseWriter = HealthCheckResponseWriter.WriteResponse
+        });
 
         return app;
     }

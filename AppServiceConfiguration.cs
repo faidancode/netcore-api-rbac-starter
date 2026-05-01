@@ -138,7 +138,7 @@ public static class AppServiceConfiguration
                 };
             });
 
-
+        services.AddHealthChecks().AddDbContextCheck<AppDbContext>("database").AddRedis("localhost:6381", name: "redis");
 
         return builder;
     }
