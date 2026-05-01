@@ -1,5 +1,5 @@
 services:
-  # Database PostgreSQL
+  # 🐘 PostgreSQL
   postgres:
     image: postgres:16-alpine
     container_name: netcore_starter_postgres
@@ -15,11 +15,12 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"] # 🔥 fix user
       interval: 10s
       timeout: 5s
       retries: 5
 
+  # 🔴 Redis
   redis:
     image: redis:7-alpine
     container_name: netcore_rbac_redis
@@ -33,6 +34,35 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+
+  # 🚀 .NET API
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: netcore_rbac_api
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      # 🔥 override connection string (WAJIB di docker)
+      ConnectionStrings__Default: Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+
+      # optional redis (kalau kamu pakai)
+      Redis__Connection: redis:6379
+
+      # ASP.NET config
+      ASPNETCORE_ENVIRONMENT: Production
+      PORT: 5026
+    ports:
+      - "5026:5000"
+    volumes:
+      - ./logs:/app/logs
 
 volumes:
   postgres_data:

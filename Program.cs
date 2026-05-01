@@ -1,4 +1,5 @@
 using netcore_api_rbac_starter;
+using netcore_api_rbac_starter.Common;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()
@@ -9,6 +10,10 @@ Log.Logger = new LoggerConfiguration()
 try
 {
     var builder = AppBootstrap.CreateBuilder(args).AddAppServices();
+
+    DotEnv.Load();
+
+    builder.Configuration.AddEnvironmentVariables();
 
     builder.Host.UseSerilog((context, services, loggerConfiguration) =>
     {
@@ -29,6 +34,12 @@ try
     });
 
     var app = builder.Build();
+
+    // Graceful Shutdown 
+    app.Lifetime.ApplicationStopping.Register(() =>
+    {
+        Log.Information("Application is shutting down gracefully...");
+    });
 
     if (AppBootstrap.IsMigrateCommand(args))
     {

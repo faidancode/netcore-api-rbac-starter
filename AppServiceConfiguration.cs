@@ -111,6 +111,7 @@ public static class AppServiceConfiguration
             });
         });
 
+        // Collection 
         services.Configure<JwtOptions>(config.GetSection("Jwt"));
 
         services
