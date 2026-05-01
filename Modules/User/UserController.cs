@@ -45,6 +45,8 @@ public class UsersController : ControllerBase
     [HasPermission("read", "User")]
     public async Task<ActionResult<Response<UserDto>>> GetById(Guid id)
     {
+        if (id == Guid.Empty)
+            throw new BadHttpRequestException("Invalid ID");
         var result = await _usersService.GetByIdAsync(id);
         return Ok(Response<UserDto>.Ok(result));
     }
@@ -53,6 +55,8 @@ public class UsersController : ControllerBase
     [HasPermission("update", "User")]
     public async Task<ActionResult<Response<UserDto>>> Update(Guid id, [FromBody] UpdateUserRequest request)
     {
+        if (id == Guid.Empty)
+            throw new BadHttpRequestException("Invalid ID");
         var result = await _usersService.UpdateAsync(id, request);
         return Ok(Response<UserDto>.Ok(result, "User updated successfully."));
     }
@@ -63,6 +67,8 @@ public class UsersController : ControllerBase
         Guid id,
         [FromBody] ChangeUserPasswordRequest request)
     {
+        if (id == Guid.Empty)
+            throw new BadHttpRequestException("Invalid ID");
         await _usersService.ChangePasswordAsync(id, request);
         return Ok(Response<object?>.Ok(null, "Password updated successfully."));
     }
@@ -71,6 +77,8 @@ public class UsersController : ControllerBase
     [HasPermission("delete", "User")]
     public async Task<ActionResult<Response<object?>>> Delete(Guid id)
     {
+        if (id == Guid.Empty)
+            throw new BadHttpRequestException("Invalid ID");
         await _usersService.DeleteAsync(id);
         return Ok(Response<object?>.Ok(null, "User deleted successfully."));
     }

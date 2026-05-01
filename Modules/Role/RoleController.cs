@@ -54,6 +54,8 @@ public class RolesController : ControllerBase
     [HasPermission("read", "Role")]
     public async Task<ActionResult<Response<RoleDto>>> GetById(Guid id)
     {
+        if (id == Guid.Empty)
+            throw new BadHttpRequestException("Invalid ID");
         var result = await _rolesService.GetByIdAsync(id);
         return Ok(Response<RoleDto>.Ok(result));
     }
@@ -62,6 +64,8 @@ public class RolesController : ControllerBase
     [HasPermission("update", "Role")]
     public async Task<ActionResult<Response<RoleDto>>> Update(Guid id, [FromBody] UpdateRoleRequest request)
     {
+        if (id == Guid.Empty)
+            throw new BadHttpRequestException("Invalid ID");
         var result = await _rolesService.UpdateAsync(id, request);
         return Ok(Response<RoleDto>.Ok(result, "Role updated successfully."));
     }
@@ -70,6 +74,8 @@ public class RolesController : ControllerBase
     [HasPermission("delete", "Role")]
     public async Task<ActionResult<Response<object?>>> Delete(Guid id)
     {
+        if (id == Guid.Empty)
+            throw new BadHttpRequestException("Invalid ID");
         await _rolesService.DeleteAsync(id);
         return Ok(Response<object?>.Ok(null, "Role deleted successfully."));
     }
@@ -80,6 +86,8 @@ public class RolesController : ControllerBase
         Guid id,
         [FromBody] AssignPermissionsRequest request)
     {
+        if (id == Guid.Empty)
+            throw new BadHttpRequestException("Invalid ID");
         var result = await _rolesService.AssignPermissionsAsync(id, request);
         return Ok(Response<RoleDto>.Ok(result, "Permissions assigned successfully."));
     }

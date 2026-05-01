@@ -31,7 +31,7 @@ public class DepartmentsController : ControllerBase
     {
         var result = await _service.GetAllAsync(query);
         return Ok(Response<IEnumerable<DepartmentDto>>.Ok(
-            result.Items, 
+            result.Items,
             meta: PaginationMeta.Create(query.Page, query.Limit, result.Total)
         ));
     }
@@ -40,6 +40,8 @@ public class DepartmentsController : ControllerBase
     [HasPermission("read", "Department")]
     public async Task<ActionResult<Response<DepartmentDto>>> GetById(Guid id)
     {
+        if (id == Guid.Empty)
+            throw new BadHttpRequestException("Invalid ID");
         var result = await _service.GetByIdAsync(id);
         return Ok(Response<DepartmentDto>.Ok(result));
     }
@@ -48,6 +50,8 @@ public class DepartmentsController : ControllerBase
     [HasPermission("update", "Department")]
     public async Task<ActionResult<Response<DepartmentDto>>> Update(Guid id, [FromBody] UpdateDepartmentRequest request)
     {
+        if (id == Guid.Empty)
+            throw new BadHttpRequestException("Invalid ID");
         var result = await _service.UpdateAsync(id, request);
         return Ok(Response<DepartmentDto>.Ok(result, "Department updated successfully."));
     }
@@ -56,6 +60,8 @@ public class DepartmentsController : ControllerBase
     [HasPermission("delete", "Department")]
     public async Task<ActionResult<Response<object?>>> Delete(Guid id)
     {
+        if (id == Guid.Empty)
+            throw new BadHttpRequestException("Invalid ID");
         await _service.DeleteAsync(id);
         return Ok(Response<object?>.Ok(null, "Department deleted successfully."));
     }

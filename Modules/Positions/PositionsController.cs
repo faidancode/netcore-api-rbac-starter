@@ -42,6 +42,8 @@ public class PositionsController : ControllerBase
     [HasPermission("read", "Position")]
     public async Task<ActionResult<Response<PositionDto>>> GetById(Guid id)
     {
+        if (id == Guid.Empty)
+            throw new BadHttpRequestException("Invalid ID");
         var result = await _service.GetByIdAsync(id);
         return Ok(Response<PositionDto>.Ok(result));
     }
@@ -50,6 +52,8 @@ public class PositionsController : ControllerBase
     [HasPermission("update", "Position")]
     public async Task<ActionResult<Response<PositionDto>>> Update(Guid id, [FromBody] UpdatePositionRequest request)
     {
+        if (id == Guid.Empty)
+            throw new BadHttpRequestException("Invalid ID");
         var result = await _service.UpdateAsync(id, request);
         return Ok(Response<PositionDto>.Ok(result, "Position updated successfully."));
     }
@@ -58,6 +62,8 @@ public class PositionsController : ControllerBase
     [HasPermission("delete", "Position")]
     public async Task<ActionResult<Response<object?>>> Delete(Guid id)
     {
+        if (id == Guid.Empty)
+            throw new BadHttpRequestException("Invalid ID");
         await _service.DeleteAsync(id);
         return Ok(Response<object?>.Ok(null, "Position deleted successfully."));
     }

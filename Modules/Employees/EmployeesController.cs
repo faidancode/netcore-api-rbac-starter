@@ -41,6 +41,9 @@ public class EmployeesController : ControllerBase
     [HasPermission("read", "Employee")]
     public async Task<ActionResult<Response<EmployeeDto>>> GetById(Guid id)
     {
+        if (id == Guid.Empty)
+            throw new BadHttpRequestException("Invalid ID");
+
         var result = await _service.GetByIdAsync(id);
         return Ok(Response<EmployeeDto>.Ok(result));
     }
@@ -49,6 +52,8 @@ public class EmployeesController : ControllerBase
     [HasPermission("read", "Employee")]
     public async Task<ActionResult<Response<IEnumerable<PositionHistoryDto>>>> GetPositionHistories(Guid id)
     {
+        if (id == Guid.Empty)
+            throw new BadHttpRequestException("Invalid ID");
         var result = await _service.GetPositionHistoriesAsync(id);
         return Ok(Response<IEnumerable<PositionHistoryDto>>.Ok(result));
     }
@@ -57,6 +62,8 @@ public class EmployeesController : ControllerBase
     [HasPermission("update", "Employee")]
     public async Task<ActionResult<Response<EmployeeDto>>> Update(Guid id, [FromBody] UpdateEmployeeRequest request)
     {
+        if (id == Guid.Empty)
+            throw new BadHttpRequestException("Invalid ID");
         var result = await _service.UpdateAsync(id, request);
         return Ok(Response<EmployeeDto>.Ok(result, "Employee updated successfully."));
     }
@@ -65,6 +72,8 @@ public class EmployeesController : ControllerBase
     [HasPermission("delete", "Employee")]
     public async Task<ActionResult<Response<object?>>> Delete(Guid id)
     {
+        if (id == Guid.Empty)
+            throw new BadHttpRequestException("Invalid ID");
         await _service.DeleteAsync(id);
         return Ok(Response<object?>.Ok(null, "Employee deleted successfully."));
     }
