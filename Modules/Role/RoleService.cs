@@ -202,10 +202,19 @@ public class RolesService : IRolesService
         IReadOnlyCollection<Guid> permissionIds,
         CancellationToken ct)
     {
-        // ✅ direct delete (EF Core 7+)
-        await _db.RolePermissions
-            .Where(rp => rp.RoleId == roleId)
-            .ExecuteDeleteAsync(ct);
+        var rolePermissions = _db.RolePermissions.Where(rp => rp.RoleId == roleId);
+
+        // InMemory and some non-relational providers do not support ExecuteDeleteAsync.
+        // Fall back to tracked removal so unit tests can run against lightweight providers.
+        if (_db.Database.IsRelational())
+        {
+            await rolePermissions.ExecuteDeleteAsync(ct);
+        }
+        else
+        {
+            var existingRolePermissions = await rolePermissions.ToListAsync(ct);
+            _db.RolePermissions.RemoveRange(existingRolePermissions);
+        }
 
         if (permissionIds.Count == 0)
             return;
