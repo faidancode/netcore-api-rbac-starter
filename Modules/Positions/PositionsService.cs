@@ -10,11 +10,11 @@ namespace netcore_api_rbac_starter.Modules.Positions;
 
 public interface IPositionsService
 {
-    Task<PositionDto> CreateAsync(CreatePositionRequest request);
-    Task<PagedResult<PositionDto>> GetAllAsync(ListPositionQuery query);
-    Task<PositionDto> GetByIdAsync(Guid id);
-    Task<PositionDto> UpdateAsync(Guid id, UpdatePositionRequest request);
-    Task DeleteAsync(Guid id);
+    Task<PositionDto> CreateAsync(CreatePositionRequest request, CancellationToken ct);
+    Task<PagedResult<PositionDto>> GetAllAsync(ListPositionQuery query, CancellationToken ct);
+    Task<PositionDto> GetByIdAsync(Guid id, CancellationToken ct);
+    Task<PositionDto> UpdateAsync(Guid id, UpdatePositionRequest request, CancellationToken ct);
+    Task DeleteAsync(Guid id, CancellationToken ct);
 }
 
 public class PositionsService : IPositionsService
@@ -23,14 +23,14 @@ public class PositionsService : IPositionsService
 
     public PositionsService(AppDbContext db) => _db = db;
 
-    public async Task<PositionDto> CreateAsync(CreatePositionRequest request)
+    public async Task<PositionDto> CreateAsync(CreatePositionRequest request, CancellationToken ct)
     {
-        var deptExists = await _db.Departments.AnyAsync(d => d.Id == request.DepartmentId);
+        var deptExists = await _db.Departments.AnyAsync(d => d.Id == request.DepartmentId, ct);
         if (!deptExists)
             throw new NotFoundException("Department", request.DepartmentId);
 
         var exists = await _db.Positions
-            .AnyAsync(p => p.DepartmentId == request.DepartmentId && p.Name == request.Name);
+            .AnyAsync(p => p.DepartmentId == request.DepartmentId && p.Name == request.Name, ct);
         if (exists)
             throw new ConflictException($"Position '{request.Name}' already exists in this department.");
 
@@ -42,11 +42,12 @@ public class PositionsService : IPositionsService
         };
 
         _db.Positions.Add(position);
-        await _db.SaveChangesAsync();
-        return await GetByIdAsync(position.Id);
+        await _db.SaveChangesAsync(ct);
+
+        return await GetByIdAsync(position.Id, ct);
     }
 
-    public async Task<PagedResult<PositionDto>> GetAllAsync(ListPositionQuery query)
+    public async Task<PagedResult<PositionDto>> GetAllAsync(ListPositionQuery query, CancellationToken ct)
     {
         var term = (query.Search ?? query.Q)?.Trim();
         var dbQuery = _db.Positions.AsQueryable();
@@ -64,7 +65,8 @@ public class PositionsService : IPositionsService
         var sortParam = query.Sort ?? "createdAt:desc";
         dbQuery = dbQuery.ApplySorting(sortParam);
 
-        var total = await dbQuery.CountAsync();
+        var total = await dbQuery.CountAsync(ct);
+
         var items = await dbQuery
             .ApplyPagination(page, limit)
             .Select(d => new PositionDto(
@@ -75,7 +77,7 @@ public class PositionsService : IPositionsService
                 d.Department != null ? d.Department.Name : string.Empty,
                 d.CreatedAt,
                 d.UpdatedAt))
-            .ToListAsync();
+            .ToListAsync(ct);
 
         return new PagedResult<PositionDto>
         {
@@ -86,56 +88,62 @@ public class PositionsService : IPositionsService
         };
     }
 
-    public async Task<PositionDto> GetByIdAsync(Guid id)
+    public async Task<PositionDto> GetByIdAsync(Guid id, CancellationToken ct)
     {
         var position = await _db.Positions
             .Include(p => p.Department)
-            .FirstOrDefaultAsync(p => p.Id == id)
+            .FirstOrDefaultAsync(p => p.Id == id, ct)
             ?? throw new NotFoundException("Position", id);
 
         return MapToDto(position);
     }
 
-    public async Task<PositionDto> UpdateAsync(Guid id, UpdatePositionRequest request)
+    public async Task<PositionDto> UpdateAsync(Guid id, UpdatePositionRequest request, CancellationToken ct)
     {
         var position = await _db.Positions
             .Include(p => p.Department)
-            .FirstOrDefaultAsync(p => p.Id == id)
+            .FirstOrDefaultAsync(p => p.Id == id, ct)
             ?? throw new NotFoundException("Position", id);
 
         var targetDeptId = request.DepartmentId ?? position.DepartmentId;
 
         if (request.DepartmentId.HasValue && request.DepartmentId != position.DepartmentId)
         {
-            var deptExists = await _db.Departments.AnyAsync(d => d.Id == request.DepartmentId.Value);
+            var deptExists = await _db.Departments.AnyAsync(d => d.Id == request.DepartmentId.Value, ct);
             if (!deptExists)
                 throw new NotFoundException("Department", request.DepartmentId.Value);
+
             position.DepartmentId = request.DepartmentId.Value;
         }
 
         if (request.Name != null && (request.Name != position.Name || targetDeptId != position.DepartmentId))
         {
             var nameExists = await _db.Positions
-                .AnyAsync(p => p.DepartmentId == targetDeptId && p.Name == request.Name && p.Id != id);
+                .AnyAsync(p => p.DepartmentId == targetDeptId && p.Name == request.Name && p.Id != id, ct);
+
             if (nameExists)
                 throw new ConflictException($"Position '{request.Name}' already exists in this department.");
+
             position.Name = request.Name;
         }
 
-        if (request.Description != null) position.Description = request.Description;
+        if (request.Description != null)
+            position.Description = request.Description;
 
-        await _db.SaveChangesAsync();
-        return await GetByIdAsync(position.Id);
+        await _db.SaveChangesAsync(ct);
+
+        return await GetByIdAsync(position.Id, ct);
     }
 
-    public async Task DeleteAsync(Guid id)
+    public async Task DeleteAsync(Guid id, CancellationToken ct)
     {
-        var position = await _db.Positions.FirstOrDefaultAsync(p => p.Id == id)
+        var position = await _db.Positions.FirstOrDefaultAsync(p => p.Id == id, ct)
             ?? throw new NotFoundException("Position", id);
 
         position.IsDeleted = true;
         position.DeletedAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync();
+
+        await _db.SaveChangesAsync(ct);
     }
 
     private static PositionDto MapToDto(Position p) =>

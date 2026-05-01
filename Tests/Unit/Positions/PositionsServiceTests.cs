@@ -19,7 +19,7 @@ public class PositionsServiceTests
         await EntityBuilder.SeedDefaultDataAsync(db);
         var svc = new PositionsService(db);
 
-        var result = await svc.CreateAsync(new CreatePositionRequest("Staff", "Staff position", EntityBuilder.EngineeringId));
+        var result = await svc.CreateAsync(new CreatePositionRequest("Staff", "Staff position", EntityBuilder.EngineeringId), CancellationToken.None);
 
         result.Id.Should().NotBeEmpty();
         result.Name.Should().Be("Staff");
@@ -35,7 +35,7 @@ public class PositionsServiceTests
         var svc = new PositionsService(db);
 
         await Assert.ThrowsAsync<ConflictException>(() =>
-            svc.CreateAsync(new CreatePositionRequest("Senior Developer", "Duplicate", EntityBuilder.EngineeringId)));
+            svc.CreateAsync(new CreatePositionRequest("Senior Developer", "Duplicate", EntityBuilder.EngineeringId), CancellationToken.None));
     }
 
     [Fact]
@@ -45,7 +45,7 @@ public class PositionsServiceTests
         await EntityBuilder.SeedDefaultDataAsync(db);
         var svc = new PositionsService(db);
 
-        var pagedResult = await svc.GetAllAsync(new ListPositionQuery());
+        var pagedResult = await svc.GetAllAsync(new ListPositionQuery(), CancellationToken.None);
         var result = pagedResult.Items.ToList();
 
         result.Should().HaveCount(2);
@@ -65,7 +65,7 @@ public class PositionsServiceTests
         await db.SaveChangesAsync();
 
         var svc = new PositionsService(db);
-        var pagedResult = await svc.GetAllAsync(new ListPositionQuery());
+        var pagedResult = await svc.GetAllAsync(new ListPositionQuery(), CancellationToken.None);
         var result = pagedResult.Items.ToList();
 
         result.Should().HaveCount(1);
@@ -79,7 +79,7 @@ public class PositionsServiceTests
         await EntityBuilder.SeedDefaultDataAsync(db);
         var svc = new PositionsService(db);
 
-        var result = await svc.GetByIdAsync(EntityBuilder.SeniorDevId);
+        var result = await svc.GetByIdAsync(EntityBuilder.SeniorDevId, CancellationToken.None);
 
         result.Id.Should().Be(EntityBuilder.SeniorDevId);
         result.Name.Should().Be("Senior Developer");
@@ -91,7 +91,7 @@ public class PositionsServiceTests
         await using var db = DbContextFactory.Create();
         var svc = new PositionsService(db);
 
-        await Assert.ThrowsAsync<NotFoundException>(() => svc.GetByIdAsync(Guid.NewGuid()));
+        await Assert.ThrowsAsync<NotFoundException>(() => svc.GetByIdAsync(Guid.NewGuid(), CancellationToken.None));
     }
 
     [Fact]
@@ -102,7 +102,7 @@ public class PositionsServiceTests
         var svc = new PositionsService(db);
 
         var result = await svc.UpdateAsync(EntityBuilder.SeniorDevId,
-            new UpdatePositionRequest("Lead Developer", "Lead position", null));
+            new UpdatePositionRequest("Lead Developer", "Lead position", null), CancellationToken.None);
 
         result.Name.Should().Be("Lead Developer");
         result.Description.Should().Be("Lead position");
@@ -122,7 +122,7 @@ public class PositionsServiceTests
 
         await Assert.ThrowsAsync<ConflictException>(() =>
             svc.UpdateAsync(EntityBuilder.SeniorDevId,
-                new UpdatePositionRequest("Junior Developer", null, null)));
+                new UpdatePositionRequest("Junior Developer", null, null), CancellationToken.None));
     }
 
     [Fact]
@@ -132,7 +132,7 @@ public class PositionsServiceTests
         var svc = new PositionsService(db);
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
-            svc.UpdateAsync(Guid.NewGuid(), new UpdatePositionRequest("X", null, null)));
+            svc.UpdateAsync(Guid.NewGuid(), new UpdatePositionRequest("X", null, null), CancellationToken.None));
     }
 
     [Fact]
@@ -142,7 +142,7 @@ public class PositionsServiceTests
         await EntityBuilder.SeedDefaultDataAsync(db);
         var svc = new PositionsService(db);
 
-        await svc.DeleteAsync(EntityBuilder.SeniorDevId);
+        await svc.DeleteAsync(EntityBuilder.SeniorDevId, CancellationToken.None);
 
         var pos = await db.Positions.IgnoreQueryFilters()
             .FirstAsync(d => d.Id == EntityBuilder.SeniorDevId);
@@ -157,7 +157,7 @@ public class PositionsServiceTests
         await using var db = DbContextFactory.Create();
         var svc = new PositionsService(db);
 
-        await Assert.ThrowsAsync<NotFoundException>(() => svc.DeleteAsync(Guid.NewGuid()));
+        await Assert.ThrowsAsync<NotFoundException>(() => svc.DeleteAsync(Guid.NewGuid(), CancellationToken.None));
     }
 }
 
