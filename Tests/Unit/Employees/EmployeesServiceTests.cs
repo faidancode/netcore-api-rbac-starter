@@ -5,6 +5,7 @@ using netcore_api_rbac_starter.Entities;
 using netcore_api_rbac_starter.Modules.Employees;
 using netcore_api_rbac_starter.Modules.Employees.Dtos;
 using netcore_api_rbac_starter.Tests.Helpers;
+using System.Threading;
 
 namespace netcore_api_rbac_starter.Tests.Unit.Employees;
 
@@ -27,13 +28,13 @@ public class EmployeesServiceTests
             DepartmentId: EntityBuilder.EngineeringId
         );
 
-        var result = await svc.CreateAsync(req);
+        var result = await svc.CreateAsync(req, CancellationToken.None);
 
         result.Id.Should().NotBeEmpty();
         result.FullName.Should().Be("New Employee");
         result.Nip.Should().Be("EMP-003");
         result.PositionId.Should().Be(EntityBuilder.SeniorDevId);
-        
+
         // Ensure position history is created
         var histories = await db.PositionHistories.Where(ph => ph.EmployeeId == result.Id).ToListAsync();
         histories.Should().HaveCount(1);
@@ -56,7 +57,7 @@ public class EmployeesServiceTests
             DateOfActivePosition: null
         );
 
-        await Assert.ThrowsAsync<ConflictException>(() => svc.CreateAsync(req));
+        await Assert.ThrowsAsync<ConflictException>(() => svc.CreateAsync(req, CancellationToken.None));
     }
 
     [Fact]
@@ -66,7 +67,7 @@ public class EmployeesServiceTests
         await EntityBuilder.SeedDefaultDataAsync(db);
         var svc = new EmployeesService(db);
 
-        var result = await svc.GetAllAsync(new EmployeeListQuery());
+        var result = await svc.GetAllAsync(new EmployeeListQuery(), CancellationToken.None);
 
         result.Total.Should().BeGreaterThanOrEqualTo(2);
         result.Items.Should().Contain(e => e.Nip == "EMP-001");
@@ -80,7 +81,7 @@ public class EmployeesServiceTests
         await EntityBuilder.SeedDefaultDataAsync(db);
         var svc = new EmployeesService(db);
 
-        var result = await svc.GetByIdAsync(EntityBuilder.Employee1Id);
+        var result = await svc.GetByIdAsync(EntityBuilder.Employee1Id, CancellationToken.None);
 
         result.Id.Should().Be(EntityBuilder.Employee1Id);
         result.FullName.Should().Be("John Doe");
@@ -92,7 +93,7 @@ public class EmployeesServiceTests
         await using var db = DbContextFactory.Create();
         var svc = new EmployeesService(db);
 
-        await Assert.ThrowsAsync<NotFoundException>(() => svc.GetByIdAsync(Guid.NewGuid()));
+        await Assert.ThrowsAsync<NotFoundException>(() => svc.GetByIdAsync(Guid.NewGuid(), CancellationToken.None));
     }
 
     [Fact]
@@ -116,7 +117,7 @@ public class EmployeesServiceTests
             ManagerId: null
         );
 
-        var result = await svc.UpdateAsync(EntityBuilder.Employee1Id, req);
+        var result = await svc.UpdateAsync(EntityBuilder.Employee1Id, req, CancellationToken.None);
 
         result.FullName.Should().Be("John Doe Updated");
         result.Nip.Should().Be("EMP-001"); // Unchanged
@@ -143,10 +144,10 @@ public class EmployeesServiceTests
             ManagerId: null
         );
 
-        var result = await svc.UpdateAsync(EntityBuilder.Employee1Id, req);
+        var result = await svc.UpdateAsync(EntityBuilder.Employee1Id, req, CancellationToken.None);
 
         result.PositionId.Should().Be(EntityBuilder.HrManagerId);
-        
+
         var histories = await db.PositionHistories
             .Where(ph => ph.EmployeeId == EntityBuilder.Employee1Id)
             .OrderByDescending(ph => ph.StartDate)
@@ -155,7 +156,7 @@ public class EmployeesServiceTests
         histories.Should().HaveCount(2);
         histories.First().IsActive.Should().BeTrue();
         histories.First().PositionId.Should().Be(EntityBuilder.HrManagerId);
-        
+
         histories.Last().IsActive.Should().BeFalse();
         histories.Last().EndDate.Should().NotBeNull();
     }
@@ -167,7 +168,7 @@ public class EmployeesServiceTests
         await EntityBuilder.SeedDefaultDataAsync(db);
         var svc = new EmployeesService(db);
 
-        var result = await svc.GetPositionHistoriesAsync(EntityBuilder.Employee1Id);
+        var result = await svc.GetPositionHistoriesAsync(EntityBuilder.Employee1Id, CancellationToken.None);
 
         result.Should().HaveCount(1);
         result.First().PositionId.Should().Be(EntityBuilder.SeniorDevId);
@@ -180,7 +181,7 @@ public class EmployeesServiceTests
         await EntityBuilder.SeedDefaultDataAsync(db);
         var svc = new EmployeesService(db);
 
-        await svc.DeleteAsync(EntityBuilder.Employee2Id);
+        await svc.DeleteAsync(EntityBuilder.Employee2Id, CancellationToken.None);
 
         var emp = await db.Employees.IgnoreQueryFilters()
             .FirstAsync(e => e.Id == EntityBuilder.Employee2Id);
