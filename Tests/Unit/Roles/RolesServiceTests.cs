@@ -21,7 +21,7 @@ public class RolesServiceTests
         await EntityBuilder.SeedDefaultDataAsync(db);
         var svc = new RolesService(db);
 
-        var result = await svc.CreateAsync(new CreateRoleRequest("Editor", "Can edit content", []));
+        var result = await svc.CreateAsync(new CreateRoleRequest("Editor", "Can edit content", []), CancellationToken.None);
 
         result.Id.Should().NotBeEmpty();
         result.Name.Should().Be("Editor");
@@ -37,7 +37,7 @@ public class RolesServiceTests
         var svc = new RolesService(db);
 
         await Assert.ThrowsAsync<ConflictException>(() =>
-            svc.CreateAsync(new CreateRoleRequest("Admin", null, [])));
+            svc.CreateAsync(new CreateRoleRequest("Admin", null, []), CancellationToken.None));
     }
 
     [Fact]
@@ -50,7 +50,7 @@ public class RolesServiceTests
         var result = await svc.CreateAsync(new CreateRoleRequest(
             "Editor",
             "Can edit content",
-            [EntityBuilder.ReadEmployeePermId, EntityBuilder.ReadDepartmentPermId]));
+            [EntityBuilder.ReadEmployeePermId, EntityBuilder.ReadDepartmentPermId]), CancellationToken.None);
 
         result.Permissions.Should().HaveCount(2);
         result.Permissions.Should().Contain(p => p.Action == "read" && p.Subject == "Employee");
@@ -66,7 +66,7 @@ public class RolesServiceTests
         await EntityBuilder.SeedDefaultDataAsync(db);
         var svc = new RolesService(db);
 
-        var pagedResult = await svc.GetAllAsync(new ListRoleQuery());
+        var pagedResult = await svc.GetAllAsync(new ListRoleQuery(), CancellationToken.None);
         var result = pagedResult.Items.ToList();
 
         result.Should().HaveCount(2);
@@ -81,7 +81,7 @@ public class RolesServiceTests
         await EntityBuilder.SeedDefaultDataAsync(db);
         var svc = new RolesService(db);
 
-        var pagedResult = await svc.GetAllAsync(new ListRoleQuery());
+        var pagedResult = await svc.GetAllAsync(new ListRoleQuery(), CancellationToken.None);
         var result = pagedResult.Items.ToList();
         var admin = result.Single(r => r.Name == "Admin");
 
@@ -97,7 +97,7 @@ public class RolesServiceTests
         await EntityBuilder.SeedDefaultDataAsync(db);
         var svc = new RolesService(db);
 
-        var result = await svc.GetByIdAsync(EntityBuilder.AdminRoleId);
+        var result = await svc.GetByIdAsync(EntityBuilder.AdminRoleId, CancellationToken.None);
 
         result.Id.Should().Be(EntityBuilder.AdminRoleId);
         result.Name.Should().Be("Admin");
@@ -109,7 +109,7 @@ public class RolesServiceTests
         await using var db = DbContextFactory.Create();
         var svc = new RolesService(db);
 
-        await Assert.ThrowsAsync<NotFoundException>(() => svc.GetByIdAsync(Guid.NewGuid()));
+        await Assert.ThrowsAsync<NotFoundException>(() => svc.GetByIdAsync(Guid.NewGuid(), CancellationToken.None));
     }
 
     // ── Update ────────────────────────────────────────────────────────────────
@@ -125,7 +125,7 @@ public class RolesServiceTests
             new UpdateRoleRequest(
                 "SuperViewer",
                 "Updated description",
-                [EntityBuilder.ReadEmployeePermId]));
+                [EntityBuilder.ReadEmployeePermId]), CancellationToken.None);
 
         result.Name.Should().Be("SuperViewer");
         result.Description.Should().Be("Updated description");
@@ -140,7 +140,7 @@ public class RolesServiceTests
         var svc = new RolesService(db);
 
         await Assert.ThrowsAsync<ConflictException>(() =>
-            svc.UpdateAsync(EntityBuilder.ViewerRoleId, new UpdateRoleRequest("Admin", null, [])));
+            svc.UpdateAsync(EntityBuilder.ViewerRoleId, new UpdateRoleRequest("Admin", null, []), CancellationToken.None));
     }
 
     [Fact]
@@ -152,7 +152,7 @@ public class RolesServiceTests
 
         // Updating a role to its own name should not throw a conflict
         var result = await svc.UpdateAsync(EntityBuilder.AdminRoleId,
-            new UpdateRoleRequest("Admin", "New description", []));
+            new UpdateRoleRequest("Admin", "New description", []), CancellationToken.None);
 
         result.Name.Should().Be("Admin");
     }
@@ -166,7 +166,7 @@ public class RolesServiceTests
         await EntityBuilder.SeedDefaultDataAsync(db);
         var svc = new RolesService(db);
 
-        await svc.DeleteAsync(EntityBuilder.ViewerRoleId);
+        await svc.DeleteAsync(EntityBuilder.ViewerRoleId, CancellationToken.None);
 
         var role = await db.Roles.IgnoreQueryFilters()
             .FirstAsync(r => r.Id == EntityBuilder.ViewerRoleId);
@@ -179,7 +179,7 @@ public class RolesServiceTests
         await using var db = DbContextFactory.Create();
         var svc = new RolesService(db);
 
-        await Assert.ThrowsAsync<NotFoundException>(() => svc.DeleteAsync(Guid.NewGuid()));
+        await Assert.ThrowsAsync<NotFoundException>(() => svc.DeleteAsync(Guid.NewGuid(), CancellationToken.None));
     }
 
     // ── AssignPermissions ────────────────────────────────────────────────────
@@ -199,7 +199,7 @@ public class RolesServiceTests
 
         // Admin previously had manage:all; now replace with read:Employee only
         var result = await svc.AssignPermissionsAsync(EntityBuilder.AdminRoleId,
-            new AssignPermissionsRequest([readPerm.Id]));
+            new AssignPermissionsRequest([readPerm.Id]), CancellationToken.None);
 
         result.Permissions.Should().HaveCount(1);
         result.Permissions.Should().ContainSingle(p => p.Action == "read" && p.Subject == "Employee");
@@ -213,7 +213,7 @@ public class RolesServiceTests
         var svc = new RolesService(db);
 
         var result = await svc.AssignPermissionsAsync(EntityBuilder.AdminRoleId,
-            new AssignPermissionsRequest([]));
+            new AssignPermissionsRequest([]), CancellationToken.None);
 
         result.Permissions.Should().BeEmpty();
     }
@@ -227,7 +227,7 @@ public class RolesServiceTests
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             svc.AssignPermissionsAsync(EntityBuilder.AdminRoleId,
-                new AssignPermissionsRequest([Guid.NewGuid()])));
+                new AssignPermissionsRequest([Guid.NewGuid()]), CancellationToken.None));
     }
 
     [Fact]
@@ -238,7 +238,7 @@ public class RolesServiceTests
         var svc = new RolesService(db);
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
-            svc.AssignPermissionsAsync(Guid.NewGuid(), new AssignPermissionsRequest([])));
+            svc.AssignPermissionsAsync(Guid.NewGuid(), new AssignPermissionsRequest([]), CancellationToken.None));
     }
 }
 
