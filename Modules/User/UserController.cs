@@ -21,9 +21,10 @@ public class UsersController : ControllerBase
 
     [HttpPost]
     [HasPermission("create", "User")]
-    public async Task<ActionResult<Response<UserDto>>> Create([FromBody] CreateUserRequest request)
+    public async Task<ActionResult<Response<UserDto>>> Create([FromBody] CreateUserRequest request,
+        CancellationToken ct)
     {
-        var result = await _usersService.CreateAsync(request);
+        var result = await _usersService.CreateAsync(request, ct);
         return CreatedAtAction(nameof(GetById), new { id = result.Id },
             Response<UserDto>.Ok(result, "User created successfully."));
     }
@@ -31,10 +32,11 @@ public class UsersController : ControllerBase
     [HttpGet]
     [HasPermission("read", "User")]
     public async Task<ActionResult<Response<IEnumerable<UserDto>>>> GetAll(
-        [FromQuery] ListUsersQuery query
+        [FromQuery] ListUsersQuery query,
+        CancellationToken ct
         )
     {
-        var result = await _usersService.GetAllAsync(query);
+        var result = await _usersService.GetAllAsync(query, ct);
         return Ok(Response<IEnumerable<UserDto>>.Ok(
             result.Items,
             meta: PaginationMeta.Create(result.Page, result.Limit, result.Total)
@@ -43,21 +45,23 @@ public class UsersController : ControllerBase
 
     [HttpGet("{id:guid}")]
     [HasPermission("read", "User")]
-    public async Task<ActionResult<Response<UserDto>>> GetById(Guid id)
+    public async Task<ActionResult<Response<UserDto>>> GetById(Guid id,
+        CancellationToken ct)
     {
         if (id == Guid.Empty)
             throw new BadHttpRequestException("Invalid ID");
-        var result = await _usersService.GetByIdAsync(id);
+        var result = await _usersService.GetByIdAsync(id, ct);
         return Ok(Response<UserDto>.Ok(result));
     }
 
     [HttpPatch("{id:guid}")]
     [HasPermission("update", "User")]
-    public async Task<ActionResult<Response<UserDto>>> Update(Guid id, [FromBody] UpdateUserRequest request)
+    public async Task<ActionResult<Response<UserDto>>> Update(Guid id, [FromBody] UpdateUserRequest request,
+        CancellationToken ct)
     {
         if (id == Guid.Empty)
             throw new BadHttpRequestException("Invalid ID");
-        var result = await _usersService.UpdateAsync(id, request);
+        var result = await _usersService.UpdateAsync(id, request, ct);
         return Ok(Response<UserDto>.Ok(result, "User updated successfully."));
     }
 
@@ -65,21 +69,23 @@ public class UsersController : ControllerBase
     [HasPermission("update", "User")]
     public async Task<ActionResult<Response<object?>>> ChangePassword(
         Guid id,
-        [FromBody] ChangeUserPasswordRequest request)
+        [FromBody] ChangeUserPasswordRequest request,
+        CancellationToken ct)
     {
         if (id == Guid.Empty)
             throw new BadHttpRequestException("Invalid ID");
-        await _usersService.ChangePasswordAsync(id, request);
+        await _usersService.ChangePasswordAsync(id, request, ct);
         return Ok(Response<object?>.Ok(null, "Password updated successfully."));
     }
 
     [HttpDelete("{id:guid}")]
     [HasPermission("delete", "User")]
-    public async Task<ActionResult<Response<object?>>> Delete(Guid id)
+    public async Task<ActionResult<Response<object?>>> Delete(Guid id,
+        CancellationToken ct)
     {
         if (id == Guid.Empty)
             throw new BadHttpRequestException("Invalid ID");
-        await _usersService.DeleteAsync(id);
+        await _usersService.DeleteAsync(id, ct);
         return Ok(Response<object?>.Ok(null, "User deleted successfully."));
     }
 }

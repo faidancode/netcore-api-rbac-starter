@@ -40,7 +40,7 @@ public class UsersServiceTests
         var svc = new UsersService(db);
 
         var result = await svc.CreateAsync(new CreateUserRequest(
-            "New Person", "newperson@example.com", "Password1!", EntityBuilder.AdminRoleId));
+            "New Person", "newperson@example.com", "Password1!", EntityBuilder.AdminRoleId), CancellationToken.None);
 
         result.Id.Should().NotBeEmpty();
         result.Name.Should().Be("New Person");
@@ -59,7 +59,7 @@ public class UsersServiceTests
 
         await Assert.ThrowsAsync<ConflictException>(() =>
             svc.CreateAsync(new CreateUserRequest(
-                "Duplicate", "admin@example.com", "Password1!", null)));
+                "Duplicate", "admin@example.com", "Password1!", null), CancellationToken.None));
     }
 
     [Fact]
@@ -70,7 +70,7 @@ public class UsersServiceTests
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             svc.CreateAsync(new CreateUserRequest(
-                "User", "u@example.com", "Password1!", Guid.NewGuid())));
+                "User", "u@example.com", "Password1!", Guid.NewGuid()), CancellationToken.None));
     }
 
     [Fact]
@@ -79,7 +79,7 @@ public class UsersServiceTests
         await using var db = DbContextFactory.Create();
         var svc = new UsersService(db);
 
-        await svc.CreateAsync(new CreateUserRequest("Hash Test", "hash@example.com", "MySecret!", null));
+        await svc.CreateAsync(new CreateUserRequest("Hash Test", "hash@example.com", "MySecret!", null), CancellationToken.None);
 
         var user = db.Users.First(u => u.Email == "hash@example.com");
         user.PasswordHash.Should().NotBe("MySecret!");
@@ -95,7 +95,7 @@ public class UsersServiceTests
         await EntityBuilder.SeedDefaultDataAsync(db);
 
         var svc = new UsersService(db);
-        var pagedResult = await svc.GetAllAsync(new ListUsersQuery());
+        var pagedResult = await svc.GetAllAsync(new ListUsersQuery(), CancellationToken.None);
         var result = pagedResult.Items.ToList();
 
         result.Should().HaveCount(2);
@@ -114,7 +114,7 @@ public class UsersServiceTests
         await db.SaveChangesAsync();
 
         var svc = new UsersService(db);
-        var pagedResult = await svc.GetAllAsync(new ListUsersQuery());
+        var pagedResult = await svc.GetAllAsync(new ListUsersQuery(), CancellationToken.None);
         var result = pagedResult.Items.ToList();
 
         result.Should().HaveCount(1);
@@ -130,7 +130,7 @@ public class UsersServiceTests
         await EntityBuilder.SeedDefaultDataAsync(db);
         var svc = new UsersService(db);
 
-        var result = await svc.GetByIdAsync(EntityBuilder.AdminUserId);
+        var result = await svc.GetByIdAsync(EntityBuilder.AdminUserId, CancellationToken.None);
 
         result.Id.Should().Be(EntityBuilder.AdminUserId);
         result.RoleName.Should().Be("Admin");
@@ -142,7 +142,7 @@ public class UsersServiceTests
         await using var db = DbContextFactory.Create();
         var svc = new UsersService(db);
 
-        await Assert.ThrowsAsync<NotFoundException>(() => svc.GetByIdAsync(Guid.NewGuid()));
+        await Assert.ThrowsAsync<NotFoundException>(() => svc.GetByIdAsync(Guid.NewGuid(), CancellationToken.None));
     }
 
     // ── Update ────────────────────────────────────────────────────────────────
@@ -155,7 +155,7 @@ public class UsersServiceTests
         var svc = new UsersService(db);
 
         var result = await svc.UpdateAsync(EntityBuilder.AdminUserId,
-            new UpdateUserRequest("Updated Name", null, null, null));
+            new UpdateUserRequest("Updated Name", null, null, null), CancellationToken.None);
 
         result.Name.Should().Be("Updated Name");
     }
@@ -169,7 +169,7 @@ public class UsersServiceTests
 
         await Assert.ThrowsAsync<ConflictException>(() =>
             svc.UpdateAsync(EntityBuilder.AdminUserId,
-                new UpdateUserRequest(null, "user@example.com", null, null)));
+                new UpdateUserRequest(null, "user@example.com", null, null), CancellationToken.None));
     }
 
     [Fact]
@@ -185,7 +185,7 @@ public class UsersServiceTests
                 CurrentPassword = null,
                 NewPassword = "NewPass@456!",
                 ConfirmPassword = "NewPass@456!"
-            });
+            }, CancellationToken.None);
 
         var user = db.Users.First(u => u.Id == EntityBuilder.AdminUserId);
         BCrypt.Net.BCrypt.Verify("NewPass@456!", user.PasswordHash).Should().BeTrue();
@@ -206,7 +206,7 @@ public class UsersServiceTests
                     CurrentPassword = "WrongPassword",
                     NewPassword = "NewPass@456!",
                     ConfirmPassword = "NewPass@456!"
-                }));
+                }, CancellationToken.None));
     }
 
     [Fact]
@@ -216,7 +216,7 @@ public class UsersServiceTests
         var svc = new UsersService(db);
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
-            svc.UpdateAsync(Guid.NewGuid(), new UpdateUserRequest("X", null, null, null)));
+            svc.UpdateAsync(Guid.NewGuid(), new UpdateUserRequest("X", null, null, null), CancellationToken.None));
     }
 
     [Fact]
@@ -227,7 +227,7 @@ public class UsersServiceTests
         var svc = new UsersService(db);
 
         var result = await svc.UpdateAsync(EntityBuilder.AdminUserId,
-            new UpdateUserRequest(null, null, Guid.Empty, null));
+            new UpdateUserRequest(null, null, Guid.Empty, null), CancellationToken.None);
 
         result.RoleId.Should().BeNull();
     }
@@ -241,7 +241,7 @@ public class UsersServiceTests
         await EntityBuilder.SeedDefaultDataAsync(db);
         var svc = new UsersService(db);
 
-        await svc.DeleteAsync(EntityBuilder.RegularUserId);
+        await svc.DeleteAsync(EntityBuilder.RegularUserId, CancellationToken.None);
 
         var user = await db.Users.IgnoreQueryFilters()
             .FirstAsync(u => u.Id == EntityBuilder.RegularUserId, CancellationToken.None);
@@ -255,7 +255,7 @@ public class UsersServiceTests
         await using var db = DbContextFactory.Create();
         var svc = new UsersService(db);
 
-        await Assert.ThrowsAsync<NotFoundException>(() => svc.DeleteAsync(Guid.NewGuid()));
+        await Assert.ThrowsAsync<NotFoundException>(() => svc.DeleteAsync(Guid.NewGuid(), CancellationToken.None));
     }
 
     [Fact]
@@ -265,9 +265,9 @@ public class UsersServiceTests
         await EntityBuilder.SeedDefaultDataAsync(db);
         var svc = new UsersService(db);
 
-        await svc.DeleteAsync(EntityBuilder.RegularUserId);
+        await svc.DeleteAsync(EntityBuilder.RegularUserId, CancellationToken.None);
 
-        var pagedResult = await svc.GetAllAsync(new ListUsersQuery());
+        var pagedResult = await svc.GetAllAsync(new ListUsersQuery(), CancellationToken.None);
         var result = pagedResult.Items.ToList();
         result.Should().NotContain(u => u.Id == EntityBuilder.RegularUserId);
     }
