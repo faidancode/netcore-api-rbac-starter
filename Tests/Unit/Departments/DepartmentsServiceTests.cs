@@ -33,7 +33,7 @@ public class DepartmentsServiceTests
         await using var db = DbContextFactory.Create();
         var svc = CreateService(db);
 
-        var result = await svc.CreateAsync(new CreateDepartmentRequest("Finance", "Finance team"));
+        var result = await svc.CreateAsync(new CreateDepartmentRequest("Finance", "Finance team"), CancellationToken.None);
 
         result.Id.Should().NotBeEmpty();
         result.Name.Should().Be("Finance");
@@ -52,7 +52,7 @@ public class DepartmentsServiceTests
 
         var svc = new DepartmentsService(db, currentUserMock.Object, loggerMock.Object);
 
-        await svc.CreateAsync(new CreateDepartmentRequest("Finance", "Finance team"));
+        await svc.CreateAsync(new CreateDepartmentRequest("Finance", "Finance team"), CancellationToken.None);
 
         loggerMock.Verify(
             x => x.Log(
@@ -74,7 +74,7 @@ public class DepartmentsServiceTests
         var svc = CreateService(db);
 
         await Assert.ThrowsAsync<ConflictException>(() =>
-            svc.CreateAsync(new CreateDepartmentRequest("Engineering", "Duplicate")));
+            svc.CreateAsync(new CreateDepartmentRequest("Engineering", "Duplicate"), CancellationToken.None));
     }
 
     [Fact]
@@ -84,7 +84,7 @@ public class DepartmentsServiceTests
         await EntityBuilder.SeedDefaultDataAsync(db);
         var svc = CreateService(db);
 
-        var pagedResult = await svc.GetAllAsync(new ListDepartmentQuery());
+        var pagedResult = await svc.GetAllAsync(new ListDepartmentQuery(), CancellationToken.None);
         var result = pagedResult.Items.ToList();
 
         result.Should().HaveCount(2);
@@ -103,7 +103,7 @@ public class DepartmentsServiceTests
         await db.SaveChangesAsync();
 
         var svc = CreateService(db);
-        var pagedResult = await svc.GetAllAsync(new ListDepartmentQuery());
+        var pagedResult = await svc.GetAllAsync(new ListDepartmentQuery(), CancellationToken.None);
         var result = pagedResult.Items.ToList();
 
         result.Should().HaveCount(1);
@@ -117,7 +117,7 @@ public class DepartmentsServiceTests
         await EntityBuilder.SeedDefaultDataAsync(db);
         var svc = CreateService(db);
 
-        var result = await svc.GetByIdAsync(EntityBuilder.EngineeringId);
+        var result = await svc.GetByIdAsync(EntityBuilder.EngineeringId, CancellationToken.None);
 
         result.Id.Should().Be(EntityBuilder.EngineeringId);
         result.Name.Should().Be("Engineering");
@@ -129,7 +129,7 @@ public class DepartmentsServiceTests
         await using var db = DbContextFactory.Create();
         var svc = CreateService(db);
 
-        await Assert.ThrowsAsync<NotFoundException>(() => svc.GetByIdAsync(Guid.NewGuid()));
+        await Assert.ThrowsAsync<NotFoundException>(() => svc.GetByIdAsync(Guid.NewGuid(), CancellationToken.None));
     }
 
     [Fact]
@@ -140,7 +140,7 @@ public class DepartmentsServiceTests
         var svc = CreateService(db);
 
         var result = await svc.UpdateAsync(EntityBuilder.EngineeringId,
-            new UpdateDepartmentRequest("Platform", "Platform engineering"));
+            new UpdateDepartmentRequest("Platform", "Platform engineering"), CancellationToken.None);
 
         result.Name.Should().Be("Platform");
         result.Description.Should().Be("Platform engineering");
@@ -155,7 +155,7 @@ public class DepartmentsServiceTests
 
         await Assert.ThrowsAsync<ConflictException>(() =>
             svc.UpdateAsync(EntityBuilder.EngineeringId,
-                new UpdateDepartmentRequest("Human Resources", null)));
+                new UpdateDepartmentRequest("Human Resources", null), CancellationToken.None));
     }
 
     [Fact]
@@ -165,7 +165,7 @@ public class DepartmentsServiceTests
         var svc = CreateService(db);
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
-            svc.UpdateAsync(Guid.NewGuid(), new UpdateDepartmentRequest("X", null)));
+            svc.UpdateAsync(Guid.NewGuid(), new UpdateDepartmentRequest("X", null), CancellationToken.None));
     }
 
     [Fact]
@@ -175,7 +175,7 @@ public class DepartmentsServiceTests
         await EntityBuilder.SeedDefaultDataAsync(db);
         var svc = CreateService(db);
 
-        await svc.DeleteAsync(EntityBuilder.HrDeptId);
+        await svc.DeleteAsync(EntityBuilder.HrDeptId, CancellationToken.None);
 
         var dept = await db.Departments.IgnoreQueryFilters()
             .FirstAsync(d => d.Id == EntityBuilder.HrDeptId);
@@ -190,7 +190,7 @@ public class DepartmentsServiceTests
         await using var db = DbContextFactory.Create();
         var svc = CreateService(db);
 
-        await Assert.ThrowsAsync<NotFoundException>(() => svc.DeleteAsync(Guid.NewGuid()));
+        await Assert.ThrowsAsync<NotFoundException>(() => svc.DeleteAsync(Guid.NewGuid(), CancellationToken.None));
     }
 }
 
