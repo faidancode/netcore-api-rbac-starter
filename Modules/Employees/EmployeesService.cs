@@ -273,6 +273,14 @@ public class EmployeesService : BaseService, IEmployeesService
         if (request.DateOfJoining.HasValue) employee.DateOfJoining = request.DateOfJoining.Value;
         if (request.DateOfActivePosition.HasValue) employee.DateOfActivePosition = request.DateOfActivePosition;
 
+        var before = new
+        {
+            employee.FullName,
+            employee.Nip,
+            employee.PositionId,
+            employee.DepartmentId
+        };
+
         if (positionChanged)
         {
             await using var transaction = await _db.Database.BeginTransactionAsync(ct);
@@ -302,11 +310,23 @@ public class EmployeesService : BaseService, IEmployeesService
 
             await _db.SaveChangesAsync(ct);
             await transaction.CommitAsync(ct);
+
+
+
         }
         else
         {
             await _db.SaveChangesAsync(ct); // ✅ single atomic write
         }
+
+        await DispatchAsync(
+                new EmployeeUpdatedEvent(employee.Id, before, new
+                {
+                    employee.FullName,
+                    employee.Nip
+                }),
+                ct
+            );
 
         return await GetByIdAsync(id, ct);
     }
@@ -321,6 +341,11 @@ public class EmployeesService : BaseService, IEmployeesService
         employee.DeletedAt = DateTime.UtcNow;
 
         await _db.SaveChangesAsync(ct); // ✅ single write → no transaction needed
+
+        await DispatchAsync(
+                new EmployeeDeletedEvent(employee.Id),
+                ct
+            );
     }
 
     // 🔽 helper tetap sama
