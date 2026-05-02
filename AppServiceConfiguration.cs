@@ -17,6 +17,7 @@ using netcore_api_rbac_starter.Security;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Mvc;
 using netcore_api_rbac_starter.Common.Models;
+using System.Text.Json.Serialization;
 
 namespace netcore_api_rbac_starter;
 
@@ -31,7 +32,13 @@ public static class AppServiceConfiguration
         services.AddOpenApi();
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen();
-        services.AddControllers();
+        services.AddControllers()
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.Converters.Add(
+                        new JsonStringEnumConverter()
+                    );
+                });
 
         services.AddApiVersioning(options =>
         {
@@ -81,6 +88,10 @@ public static class AppServiceConfiguration
         services.AddScoped<IEmployeesService, EmployeesService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IJwtService, JwtService>();
+        services.AddScoped<AuditService>();
+        services.AddScoped<IEventHandler<IAuditableEvent>, GenericAuditHandler>();
+        services.AddScoped<IEventDispatcher, EventDispatcher>();
+
 
         // Authorization
         services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();

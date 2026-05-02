@@ -18,66 +18,63 @@ public interface IEmployeesService
     Task DeleteAsync(Guid id, CancellationToken ct);
 }
 
-public class EmployeesService : IEmployeesService
+// This class handles the business logic for Employees
+// It inherits from BaseService and implements the IEmployeesService interface for Dependency Injection
+public class EmployeesService : BaseService, IEmployeesService
 {
+    // Local database context variable, marked as readonly for thread-safety and immutability
     private readonly AppDbContext _db;
 
-    public EmployeesService(AppDbContext db) => _db = db;
+    // The Constructor: used to inject the required dependencies (Database and Event Dispatcher)
+    public EmployeesService(AppDbContext db, IEventDispatcher dispatcher)
+        : base(dispatcher) // Passes the 'dispatcher' to the parent BaseService class
+    {
+        _db = db; // Assigns the injected database context to the local field
+    }
 
     public async Task<EmployeeDto> CreateAsync(CreateEmployeeRequest request, CancellationToken ct)
     {
-        // 🔥 Parallel validation → reduce DB round trips
-        var nipExistsTask = _db.Employees.AnyAsync(e => e.Nip == request.Nip, ct);
+        // =========================
+        // 1. Pre-check Employee (combine query)
+        // =========================
+        var employeeChecks = await _db.Employees
+            .Where(e =>
+                e.Nip == request.Nip ||
+                (request.UserId.HasValue && e.UserId == request.UserId)
+            )
+            .Select(e => new { e.Nip, e.UserId })
+            .ToListAsync(ct);
 
-        var userExistsTask = request.UserId.HasValue
-            ? _db.Users.AnyAsync(u => u.Id == request.UserId.Value, ct)
-            : Task.FromResult(true);
-
-        var userLinkedTask = request.UserId.HasValue
-            ? _db.Employees.AnyAsync(e => e.UserId == request.UserId, ct)
-            : Task.FromResult(false);
-
-        var positionExistsTask = _db.Positions.AnyAsync(p => p.Id == request.PositionId, ct);
-
-        var departmentExistsTask = request.DepartmentId.HasValue
-            ? _db.Departments.AnyAsync(d => d.Id == request.DepartmentId.Value, ct)
-            : Task.FromResult(true);
-
-        var managerExistsTask = request.ManagerId.HasValue
-            ? _db.Employees.AnyAsync(e => e.Id == request.ManagerId.Value, ct)
-            : Task.FromResult(true);
-
-        await Task.WhenAll(
-            nipExistsTask,
-            userExistsTask,
-            userLinkedTask,
-            positionExistsTask,
-            departmentExistsTask,
-            managerExistsTask
-        );
-
-        if (nipExistsTask.Result)
+        if (employeeChecks.Any(e => e.Nip == request.Nip))
             throw new ConflictException($"Employee with NIP '{request.Nip}' already exists.");
 
-        if (request.UserId.HasValue)
-        {
-            if (!userExistsTask.Result)
-                throw new NotFoundException("User", request.UserId.Value);
+        if (request.UserId.HasValue &&
+            employeeChecks.Any(e => e.UserId == request.UserId))
+            throw new ConflictException("This user is already linked to another employee.");
 
-            if (userLinkedTask.Result)
-                throw new ConflictException("This user is already linked to another employee.");
-        }
+        // =========================
+        // 2. Validate required relations
+        // =========================
 
-        if (!positionExistsTask.Result)
+        if (!await _db.Positions.AnyAsync(p => p.Id == request.PositionId, ct))
             throw new NotFoundException("Position", request.PositionId);
 
-        if (!departmentExistsTask.Result)
-            throw new NotFoundException("Department", request.DepartmentId!.Value);
+        if (request.DepartmentId.HasValue &&
+            !await _db.Departments.AnyAsync(d => d.Id == request.DepartmentId.Value, ct))
+            throw new NotFoundException("Department", request.DepartmentId.Value);
 
-        if (!managerExistsTask.Result)
-            throw new NotFoundException("Manager (Employee)", request.ManagerId!.Value);
+        if (request.ManagerId.HasValue &&
+            !await _db.Employees.AnyAsync(e => e.Id == request.ManagerId.Value, ct))
+            throw new NotFoundException("Manager (Employee)", request.ManagerId.Value);
 
-        await using var transaction = await _db.Database.BeginTransactionAsync(ct); // ✅ cancellation-aware transaction
+        if (request.UserId.HasValue &&
+            !await _db.Users.AnyAsync(u => u.Id == request.UserId.Value, ct))
+            throw new NotFoundException("User", request.UserId.Value);
+
+        // =========================
+        // 3. Transaction
+        // =========================
+        await using var transaction = await _db.Database.BeginTransactionAsync(ct);
 
         var employee = new Employee
         {
@@ -96,7 +93,6 @@ public class EmployeesService : IEmployeesService
 
         _db.Employees.Add(employee);
 
-        // ✅ Single SaveChanges → prevent partial write + reduce DB calls
         _db.PositionHistories.Add(new PositionHistory
         {
             EmployeeId = employee.Id,
@@ -107,9 +103,24 @@ public class EmployeesService : IEmployeesService
         });
 
         await _db.SaveChangesAsync(ct);
+
+        // =========================
+        // 4. Commit FIRST
+        // =========================
         await transaction.CommitAsync(ct);
 
-        return await GetByIdAsync(employee.Id, ct); // 🔁 propagate ct
+        // =========================
+        // 5. Dispatch event AFTER commit
+        // =========================
+        await DispatchAsync(
+            new EmployeeCreatedEvent(employee.Id, employee.FullName, employee.Nip),
+            ct
+        );
+
+        // =========================
+        // 6. Return result
+        // =========================
+        return await GetByIdAsync(employee.Id, ct);
     }
 
     public async Task<PagedResult<EmployeeDto>> GetAllAsync(EmployeeListQuery query, CancellationToken ct)
