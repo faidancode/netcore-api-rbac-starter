@@ -144,5 +144,5 @@ public class DepartmentsService : IDepartmentsService
     }
 
     private static DepartmentDto MapToDto(Department d) =>
-        new(d.Id, d.Name, d.Description, d.CreatedAt, d.UpdatedAt);
+        new(d.Id, d.Name, d.Description, d.IsActive, d.CreatedAt, d.UpdatedAt);
 }

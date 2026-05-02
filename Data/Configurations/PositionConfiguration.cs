@@ -14,6 +14,7 @@ public class PositionConfiguration : IEntityTypeConfiguration<Position>
         builder.Property(p => p.Id).HasColumnName("id");
         builder.Property(p => p.Name).HasColumnName("name").HasMaxLength(200).IsRequired();
         builder.Property(p => p.Description).HasColumnName("description").HasMaxLength(500);
+        builder.Property(d => d.IsActive).HasColumnName("is_active").HasDefaultValue(true);
         builder.Property(p => p.DepartmentId).HasColumnName("department_id");
         builder.Property(p => p.CreatedAt).HasColumnName("created_at");
         builder.Property(p => p.UpdatedAt).HasColumnName("updated_at");

@@ -14,6 +14,7 @@ public class DepartmentConfiguration : IEntityTypeConfiguration<Department>
         builder.Property(d => d.Id).HasColumnName("id");
         builder.Property(d => d.Name).HasColumnName("name").HasMaxLength(200).IsRequired();
         builder.Property(d => d.Description).HasColumnName("description").HasMaxLength(500);
+        builder.Property(d => d.IsActive).HasColumnName("is_active").HasDefaultValue(true);
         builder.Property(d => d.CreatedAt).HasColumnName("created_at");
         builder.Property(d => d.UpdatedAt).HasColumnName("updated_at");
         builder.Property(d => d.IsDeleted).HasColumnName("is_deleted").HasDefaultValue(false);

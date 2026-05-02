@@ -10,26 +10,21 @@ public record ListPositionQuery(
 
 public record CreatePositionRequest(
     string Name,
-
-    string? Description,
-
-    Guid DepartmentId
-
-
+    Guid DepartmentId,
+    string? Description = null,
+    bool IsActive = true
     );
 public record UpdatePositionRequest(
     string? Name,
-
     string? Description,
-
-    Guid? DepartmentId
-
-
+    Guid? DepartmentId,
+    bool? IsActive
 );
 
 public record PositionDto(
     Guid Id,
     string Name,
+    bool IsActive,
     string? Description,
     Guid DepartmentId,
     string DepartmentName,

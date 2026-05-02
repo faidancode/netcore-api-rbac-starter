@@ -11,18 +11,23 @@ public record ListDepartmentQuery(
 public record CreateDepartmentRequest(
     string Name,
 
-    string? Description
+    string? Description,
+
+    bool IsActive = true
 );
 public record UpdateDepartmentRequest(
     string? Name,
 
-    string? Description
+    string? Description,
+
+    bool? IsActive
 );
 
 public record DepartmentDto(
     Guid Id,
     string Name,
     string? Description,
+    bool IsActive,
     DateTime CreatedAt,
     DateTime UpdatedAt
 );

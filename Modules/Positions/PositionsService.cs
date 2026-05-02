@@ -72,6 +72,7 @@ public class PositionsService : IPositionsService
             .Select(d => new PositionDto(
                 d.Id,
                 d.Name,
+                d.IsActive,
                 d.Description,
                 d.DepartmentId,
                 d.Department != null ? d.Department.Name : string.Empty,
@@ -147,5 +148,5 @@ public class PositionsService : IPositionsService
     }
 
     private static PositionDto MapToDto(Position p) =>
-        new(p.Id, p.Name, p.Description, p.DepartmentId, p.Department?.Name ?? string.Empty, p.CreatedAt, p.UpdatedAt);
+        new(p.Id, p.Name, p.IsActive, p.Description, p.DepartmentId, p.Department?.Name ?? string.Empty, p.CreatedAt, p.UpdatedAt);
 }
