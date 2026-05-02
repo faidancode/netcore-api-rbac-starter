@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace netcore_api_rbac_starter.Modules.Users;
 
 [ApiController]
-[Route("users")]
+[Route("api/v{version:apiVersion}/users")]
 [Authorize]
 [Produces("application/json")]
 public class UsersController : ControllerBase

@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace netcore_api_rbac_starter.Modules.Positions;
 
 [ApiController]
-[Route("positions")]
+[Route("api/v{version:apiVersion}/positions")]
 [Authorize]
 [Produces("application/json")]
 public class PositionsController : ControllerBase

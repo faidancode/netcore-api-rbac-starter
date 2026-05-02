@@ -53,6 +53,8 @@ try
         return;
     }
 
+    await MigrateCommand.RunAsync(app);
+
     app.UseAppPipeline();
     app.Run();
 }

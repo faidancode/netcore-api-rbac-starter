@@ -6,7 +6,7 @@ using netcore_api_rbac_starter.Modules.Dashboard.Dtos;
 namespace netcore_api_rbac_starter.Modules.Dashboard;
 
 [ApiController]
-[Route("dashboard")]
+[Route("api/v{version:apiVersion}/dashboard")]
 [Authorize]
 [Produces("application/json")]
 public class DashboardController : ControllerBase

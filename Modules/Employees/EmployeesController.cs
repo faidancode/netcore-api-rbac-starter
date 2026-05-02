@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace netcore_api_rbac_starter.Modules.Employees;
 
 [ApiController]
-[Route("employees")]
+[Route("api/v{version:apiVersion}/employees")]
 [Authorize]
 [Produces("application/json")]
 public class EmployeesController : ControllerBase

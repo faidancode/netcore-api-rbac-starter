@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace netcore_api_rbac_starter.Modules.Roles;
 
 [ApiController]
-[Route("roles")]
+[Route("api/v{version:apiVersion}/roles")]
 [Authorize]
 [Produces("application/json")]
 public class RolesController : ControllerBase

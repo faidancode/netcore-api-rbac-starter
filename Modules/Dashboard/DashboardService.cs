@@ -23,7 +23,7 @@ public class DashboardService : IDashboardService
     {
         var totalDepartments = await _db.Departments.CountAsync();
         var totalPositions = await _db.Positions.CountAsync();
-        var totalEmployees = await _db.Employees.CountAsync();
+        var totalActiveEmployees = await _db.Employees.CountAsync(e=>e.IsActive == true);
         var totalPermanentEmployees = await _db.Employees.CountAsync(e => e.EmploymentType == EmploymentType.Permanent);
         var totalContractEmployees = await _db.Employees.CountAsync(e => e.EmploymentType == EmploymentType.Contract);
         var totalMaleEmployees = await _db.Employees.CountAsync(e => e.Gender == Gender.Male);
@@ -32,7 +32,7 @@ public class DashboardService : IDashboardService
         return new DashboardSummaryDto(
             totalDepartments,
             totalPositions,
-            totalEmployees,
+            totalActiveEmployees,
             totalPermanentEmployees,
             totalContractEmployees,
             totalMaleEmployees,

@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace netcore_api_rbac_starter.Modules.Departments;
 
 [ApiController]
-[Route("departments")]
+[Route("api/v{version:apiVersion}/departments")]
 [Authorize]
 [Produces("application/json")]
 public class DepartmentsController : ControllerBase

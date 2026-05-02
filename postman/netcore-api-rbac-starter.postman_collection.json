@@ -175,13 +175,13 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/users/{{adminUserId}}",
+              "raw": "{{baseUrl}}/users/{{userId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "users",
-                "{{adminUserId}}"
+                "{{userId}}"
               ]
             }
           }
@@ -198,7 +198,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"New User\",\n  \"email\": \"new.user@example.com\",\n  \"password\": \"User@123\",\n  \"roleId\": \"{{viewerRoleId}}\",\n  \"isActive\": true\n}"
+              "raw": "{\n  \"name\": \"New User\",\n  \"email\": \"new.user@example.com\",\n  \"password\": \"User@123\",\n  \"roleId\": \"{{roleId}}\",\n  \"isActive\": true\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/users",
@@ -209,7 +209,24 @@
                 "users"
               ]
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "const data = response?.data ?? response;",
+                  "const userId = data?.id;",
+                  "if (userId) {",
+                  "  pm.environment.set('userId', userId);",
+                  "  pm.environment.set('viewerUserId', userId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
         },
         {
           "name": "Update User",
@@ -223,16 +240,16 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Updated Viewer\",\n  \"email\": \"viewer.updated@example.com\",\n  \"password\": \"Viewer@123\",\n  \"roleId\": \"{{viewerRoleId}}\",\n  \"isActive\": true\n}"
+              "raw": "{\n  \"name\": \"Updated Viewer\",\n  \"email\": \"viewer.updated@example.com\",\n  \"password\": \"Viewer@123\",\n  \"roleId\": \"{{roleId}}\",\n  \"isActive\": true\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/users/{{viewerUserId}}",
+              "raw": "{{baseUrl}}/users/{{userId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "users",
-                "{{viewerUserId}}"
+                "{{userId}}"
               ]
             }
           }
@@ -248,13 +265,13 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/users/{{viewerUserId}}",
+              "raw": "{{baseUrl}}/users/{{userId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "users",
-                "{{viewerUserId}}"
+                "{{userId}}"
               ]
             }
           }
@@ -296,13 +313,13 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/roles/{{adminRoleId}}",
+              "raw": "{{baseUrl}}/roles/{{roleId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "roles",
-                "{{adminRoleId}}"
+                "{{roleId}}"
               ]
             }
           }
@@ -330,7 +347,24 @@
                 "roles"
               ]
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "const data = response?.data ?? response;",
+                  "const roleId = data?.id;",
+                  "if (roleId) {",
+                  "  pm.environment.set('roleId', roleId);",
+                  "  pm.environment.set('viewerRoleId', roleId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
         },
         {
           "name": "Update Role",
@@ -347,13 +381,13 @@
               "raw": "{\n  \"name\": \"Viewer\",\n  \"description\": \"Read only role\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/roles/{{viewerRoleId}}",
+              "raw": "{{baseUrl}}/roles/{{roleId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "roles",
-                "{{viewerRoleId}}"
+                "{{roleId}}"
               ]
             }
           }
@@ -369,13 +403,13 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/roles/{{viewerRoleId}}",
+              "raw": "{{baseUrl}}/roles/{{roleId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "roles",
-                "{{viewerRoleId}}"
+                "{{roleId}}"
               ]
             }
           }
@@ -395,13 +429,13 @@
               "raw": "{\n  \"permissionIds\": [\n    \"{{readUserPermissionId}}\",\n    \"{{readRolePermissionId}}\"\n  ]\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/roles/{{viewerRoleId}}/permissions",
+              "raw": "{{baseUrl}}/roles/{{roleId}}/permissions",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "roles",
-                "{{viewerRoleId}}",
+                "{{roleId}}",
                 "permissions"
               ]
             }
@@ -444,13 +478,13 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/departments/{{engineeringDepartmentId}}",
+              "raw": "{{baseUrl}}/departments/{{departmentId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "departments",
-                "{{engineeringDepartmentId}}"
+                "{{departmentId}}"
               ]
             }
           }
@@ -478,7 +512,24 @@
                 "departments"
               ]
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "const data = response?.data ?? response;",
+                  "const departmentId = data?.id;",
+                  "if (departmentId) {",
+                  "  pm.environment.set('departmentId', departmentId);",
+                  "  pm.environment.set('engineeringDepartmentId', departmentId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
         },
         {
           "name": "Update Department",
@@ -495,13 +546,13 @@
               "raw": "{\n  \"name\": \"Engineering Platform\",\n  \"description\": \"Platform and infrastructure team\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/departments/{{engineeringDepartmentId}}",
+              "raw": "{{baseUrl}}/departments/{{departmentId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "departments",
-                "{{engineeringDepartmentId}}"
+                "{{departmentId}}"
               ]
             }
           }
@@ -517,13 +568,13 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/departments/{{hrDepartmentId}}",
+              "raw": "{{baseUrl}}/departments/{{departmentId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "departments",
-                "{{hrDepartmentId}}"
+                "{{departmentId}}"
               ]
             }
           }
@@ -565,13 +616,13 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/positions/{{seniorDeveloperPositionId}}",
+              "raw": "{{baseUrl}}/positions/{{positionId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "positions",
-                "{{seniorDeveloperPositionId}}"
+                "{{positionId}}"
               ]
             }
           }
@@ -588,7 +639,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Product Designer\",\n  \"description\": \"Designs user experiences and interfaces\",\n  \"departmentId\": \"{{engineeringDepartmentId}}\"\n}"
+              "raw": "{\n  \"name\": \"Product Designer\",\n  \"description\": \"Designs user experiences and interfaces\",\n  \"departmentId\": \"{{departmentId}}\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/positions",
@@ -599,7 +650,24 @@
                 "positions"
               ]
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "const data = response?.data ?? response;",
+                  "const positionId = data?.id;",
+                  "if (positionId) {",
+                  "  pm.environment.set('positionId', positionId);",
+                  "  pm.environment.set('seniorDeveloperPositionId', positionId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
         },
         {
           "name": "Update Position",
@@ -613,16 +681,16 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Senior Software Engineer\",\n  \"description\": \"Updated position description\",\n  \"departmentId\": \"{{engineeringDepartmentId}}\"\n}"
+              "raw": "{\n  \"name\": \"Senior Software Engineer\",\n  \"description\": \"Updated position description\",\n  \"departmentId\": \"{{departmentId}}\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/positions/{{seniorDeveloperPositionId}}",
+              "raw": "{{baseUrl}}/positions/{{positionId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "positions",
-                "{{seniorDeveloperPositionId}}"
+                "{{positionId}}"
               ]
             }
           }
@@ -638,13 +706,13 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/positions/{{hrManagerPositionId}}",
+              "raw": "{{baseUrl}}/positions/{{positionId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "positions",
-                "{{hrManagerPositionId}}"
+                "{{positionId}}"
               ]
             }
           }
@@ -686,13 +754,13 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/employees/{{employee1Id}}",
+              "raw": "{{baseUrl}}/employees/{{employeeId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "employees",
-                "{{employee1Id}}"
+                "{{employeeId}}"
               ]
             }
           }
@@ -708,13 +776,13 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/employees/{{employee1Id}}/position-histories",
+              "raw": "{{baseUrl}}/employees/{{employeeId}}/position-histories",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "employees",
-                "{{employee1Id}}",
+                "{{employeeId}}",
                 "position-histories"
               ]
             }
@@ -732,7 +800,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"fullName\": \"New Employee\",\n  \"nip\": \"EMP-999\",\n  \"gender\": \"Male\",\n  \"positionId\": \"{{seniorDeveloperPositionId}}\",\n  \"dateOfJoining\": \"2024-01-01\",\n  \"dateOfActivePosition\": \"2024-01-01\",\n  \"employeeStatus\": \"Active\",\n  \"isActive\": true,\n  \"userId\": null,\n  \"departmentId\": \"{{engineeringDepartmentId}}\",\n  \"managerId\": null\n}"
+              "raw": "{\n  \"fullName\": \"New Employee\",\n  \"nip\": \"EMP-999\",\n  \"gender\": \"Male\",\n  \"positionId\": \"{{positionId}}\",\n  \"dateOfJoining\": \"2024-01-01\",\n  \"dateOfActivePosition\": \"2024-01-01\",\n  \"employeeStatus\": \"Active\",\n  \"isActive\": true,\n  \"userId\": null,\n  \"departmentId\": \"{{departmentId}}\",\n  \"managerId\": null\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/employees",
@@ -743,7 +811,24 @@
                 "employees"
               ]
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "const data = response?.data ?? response;",
+                  "const employeeId = data?.id;",
+                  "if (employeeId) {",
+                  "  pm.environment.set('employeeId', employeeId);",
+                  "  pm.environment.set('employee1Id', employeeId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
         },
         {
           "name": "Update Employee",
@@ -757,16 +842,16 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"fullName\": \"Updated Employee\",\n  \"nip\": \"EMP-999\",\n  \"gender\": \"Male\",\n  \"positionId\": \"{{seniorDeveloperPositionId}}\",\n  \"dateOfJoining\": \"2024-01-01\",\n  \"dateOfActivePosition\": \"2024-01-01\",\n  \"employeeStatus\": \"Active\",\n  \"isActive\": true,\n  \"userId\": null,\n  \"departmentId\": \"{{engineeringDepartmentId}}\",\n  \"managerId\": null\n}"
+              "raw": "{\n  \"fullName\": \"Updated Employee\",\n  \"nip\": \"EMP-999\",\n  \"gender\": \"Male\",\n  \"positionId\": \"{{positionId}}\",\n  \"dateOfJoining\": \"2024-01-01\",\n  \"dateOfActivePosition\": \"2024-01-01\",\n  \"employeeStatus\": \"Active\",\n  \"isActive\": true,\n  \"userId\": null,\n  \"departmentId\": \"{{departmentId}}\",\n  \"managerId\": null\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/employees/{{employee1Id}}",
+              "raw": "{{baseUrl}}/employees/{{employeeId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "employees",
-                "{{employee1Id}}"
+                "{{employeeId}}"
               ]
             }
           }
@@ -782,13 +867,13 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/employees/{{employee2Id}}",
+              "raw": "{{baseUrl}}/employees/{{employeeId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "employees",
-                "{{employee2Id}}"
+                "{{employeeId}}"
               ]
             }
           }
@@ -825,7 +910,7 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "http://localhost:5026"
+      "value": "http://localhost:5026/api/v1"
     },
     {
       "key": "accessToken",
@@ -840,11 +925,19 @@
       "value": ""
     },
     {
+      "key": "userId",
+      "value": ""
+    },
+    {
       "key": "viewerUserId",
       "value": ""
     },
     {
       "key": "adminRoleId",
+      "value": ""
+    },
+    {
+      "key": "roleId",
       "value": ""
     },
     {
@@ -856,6 +949,10 @@
       "value": ""
     },
     {
+      "key": "departmentId",
+      "value": ""
+    },
+    {
       "key": "hrDepartmentId",
       "value": ""
     },
@@ -864,11 +961,19 @@
       "value": ""
     },
     {
+      "key": "positionId",
+      "value": ""
+    },
+    {
       "key": "hrManagerPositionId",
       "value": ""
     },
     {
       "key": "employee1Id",
+      "value": ""
+    },
+    {
+      "key": "employeeId",
       "value": ""
     },
     {

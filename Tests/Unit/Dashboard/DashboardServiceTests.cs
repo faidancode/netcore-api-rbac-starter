@@ -19,7 +19,7 @@ public class DashboardServiceTests
 
         summary.TotalDepartments.Should().Be(2);
         summary.TotalPositions.Should().Be(2);
-        summary.TotalEmployees.Should().Be(2);
+        summary.TotalActiveEmployees.Should().Be(2);
         summary.TotalMaleEmployees.Should().Be(1);
         summary.TotalFemaleEmployees.Should().Be(1);
     }
@@ -60,7 +60,7 @@ public class DashboardServiceTests
 
         summary.TotalDepartments.Should().Be(2);
         summary.TotalPositions.Should().Be(2);
-        summary.TotalEmployees.Should().Be(2);
+        summary.TotalActiveEmployees.Should().Be(2);
         summary.TotalMaleEmployees.Should().Be(1);
         summary.TotalFemaleEmployees.Should().Be(1);
     }

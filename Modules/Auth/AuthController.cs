@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.RateLimiting;
 namespace netcore_api_rbac_starter.Modules.Auth;
 
 [ApiController]
-[Route("auth")]
+[Route("api/v{version:apiVersion}/auth")]
 [Produces("application/json")]
 public class AuthController : ControllerBase
 {

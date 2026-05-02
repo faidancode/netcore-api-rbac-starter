@@ -29,7 +29,7 @@ public class DashboardIntegrationTests : IClassFixture<ApiFactory>
         body!.Success.Should().BeTrue();
         body.Data!.TotalDepartments.Should().Be(2);
         body.Data!.TotalPositions.Should().Be(2);
-        body.Data!.TotalEmployees.Should().Be(2);
+        body.Data!.TotalActiveEmployees.Should().Be(2);
         body.Data!.TotalMaleEmployees.Should().Be(1);
         body.Data!.TotalFemaleEmployees.Should().Be(1);
     }
