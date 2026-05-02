@@ -131,6 +131,9 @@ public class PositionsService : IPositionsService
         if (request.Description != null)
             position.Description = request.Description;
 
+        if (request.IsActive.HasValue)
+            position.IsActive = request.IsActive.Value;
+
         await _db.SaveChangesAsync(ct);
 
         return await GetByIdAsync(position.Id, ct);

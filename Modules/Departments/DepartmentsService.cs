@@ -126,6 +126,9 @@ public class DepartmentsService : IDepartmentsService
         if (request.Description != null)
             dept.Description = request.Description;
 
+        if (request.IsActive.HasValue)
+            dept.IsActive = request.IsActive.Value;
+
         await _db.SaveChangesAsync(ct); // ✅ single write → no transaction needed
 
         return MapToDto(dept);
