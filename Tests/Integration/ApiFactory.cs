@@ -109,6 +109,15 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         return client;
     }
 
+    public HttpClient CreateManagerClient()
+    {
+        var token = GenerateToken(EntityBuilder.ManagerUserId, "manager@example.com", ["manage:all"]);
+        var client = CreateClient();
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", token);
+        return client;
+    }
+
     /// <summary>Returns an HttpClient with Authorization header for a viewer (read-only).</summary>
     public HttpClient CreateViewerClient()
     {

@@ -17,14 +17,14 @@ public class UsersIntegrationTests : IClassFixture<ApiFactory>
 
     public UsersIntegrationTests(ApiFactory factory) => _factory = factory;
 
-    // ── POST /users ───────────────────────────────────────────────────────────
+    // ── POST /api/v1/users ───────────────────────────────────────────────────────────
 
     [Fact]
     public async Task CreateUser_ValidRequest_Returns201()
     {
         var client = _factory.CreateAdminClient();
 
-        var response = await client.PostAsJsonAsync("/users", new
+        var response = await client.PostAsJsonAsync("/api/v1/users", new
         {
             name = "New Test User",
             email = $"newuser_{Guid.NewGuid():N}@example.com",
@@ -42,7 +42,7 @@ public class UsersIntegrationTests : IClassFixture<ApiFactory>
     {
         var client = _factory.CreateAdminClient();
 
-        var response = await client.PostAsJsonAsync("/users", new
+        var response = await client.PostAsJsonAsync("/api/v1/users", new
         {
             name = "Dup",
             email = "admin@example.com",   // already seeded
@@ -57,7 +57,7 @@ public class UsersIntegrationTests : IClassFixture<ApiFactory>
     {
         var client = _factory.CreateAdminClient();
 
-        var response = await client.PostAsJsonAsync("/users", new
+        var response = await client.PostAsJsonAsync("/api/v1/users", new
         {
             name = "",
             email = "bad",
@@ -72,7 +72,7 @@ public class UsersIntegrationTests : IClassFixture<ApiFactory>
     {
         var client = _factory.CreateAnonClient();
 
-        var response = await client.PostAsJsonAsync("/users", new
+        var response = await client.PostAsJsonAsync("/api/v1/users", new
         {
             name = "X",
             email = "x@x.com",
@@ -88,7 +88,7 @@ public class UsersIntegrationTests : IClassFixture<ApiFactory>
         // Viewer only has read:User, not create:User
         var client = _factory.CreateViewerClient();
 
-        var response = await client.PostAsJsonAsync("/users", new
+        var response = await client.PostAsJsonAsync("/api/v1/users", new
         {
             name = "X",
             email = "x@x.com",
@@ -98,14 +98,14 @@ public class UsersIntegrationTests : IClassFixture<ApiFactory>
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
-    // ── GET /users ────────────────────────────────────────────────────────────
+    // ── GET /api/v1/users ────────────────────────────────────────────────────────────
 
     [Fact]
     public async Task GetAllUsers_Admin_Returns200WithList()
     {
         var client = _factory.CreateAdminClient();
 
-        var response = await client.GetAsync("/users");
+        var response = await client.GetAsync("/api/v1/users");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<Response<IEnumerable<UserDto>>>();
@@ -117,7 +117,7 @@ public class UsersIntegrationTests : IClassFixture<ApiFactory>
     {
         var client = _factory.CreateViewerClient();
 
-        var response = await client.GetAsync("/users");
+        var response = await client.GetAsync("/api/v1/users");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
@@ -125,18 +125,18 @@ public class UsersIntegrationTests : IClassFixture<ApiFactory>
     [Fact]
     public async Task GetAllUsers_Unauthenticated_Returns401()
     {
-        var response = await _factory.CreateAnonClient().GetAsync("/users");
+        var response = await _factory.CreateAnonClient().GetAsync("/api/v1/users");
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
-    // ── GET /users/{id} ───────────────────────────────────────────────────────
+    // ── GET /api/v1/users/{id} ───────────────────────────────────────────────────────
 
     [Fact]
     public async Task GetUserById_ValidId_Returns200()
     {
         var client = _factory.CreateAdminClient();
 
-        var response = await client.GetAsync($"/users/{EntityBuilder.AdminUserId}");
+        var response = await client.GetAsync($"/api/v1/users/{EntityBuilder.AdminUserId}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<Response<UserDto>>();
@@ -147,11 +147,11 @@ public class UsersIntegrationTests : IClassFixture<ApiFactory>
     public async Task GetUserById_NotFound_Returns404()
     {
         var client = _factory.CreateAdminClient();
-        var response = await client.GetAsync($"/users/{Guid.NewGuid()}");
+        var response = await client.GetAsync($"/api/v1/users/{Guid.NewGuid()}");
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    // ── PATCH /users/{id} ─────────────────────────────────────────────────────
+    // ── PATCH /api/v1/users/{id} ─────────────────────────────────────────────────────
 
     [Fact]
     public async Task UpdateUser_ValidData_Returns200()
@@ -159,7 +159,7 @@ public class UsersIntegrationTests : IClassFixture<ApiFactory>
         var client = _factory.CreateAdminClient();
 
         var response = await client.PatchAsJsonAsync(
-            $"/users/{EntityBuilder.RegularUserId}",
+            $"/api/v1/users/{EntityBuilder.RegularUserId}",
             new { name = "Updated Regular" });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -173,7 +173,7 @@ public class UsersIntegrationTests : IClassFixture<ApiFactory>
         var client = _factory.CreateAdminClient();
 
         var response = await client.PatchAsJsonAsync(
-            $"/users/{EntityBuilder.RegularUserId}/password",
+            $"/api/v1/users/{EntityBuilder.RegularUserId}/password",
             new
             {
                 newPassword = "NewPass@456!",
@@ -193,11 +193,11 @@ public class UsersIntegrationTests : IClassFixture<ApiFactory>
     public async Task UpdateUser_NotFound_Returns404()
     {
         var client = _factory.CreateAdminClient();
-        var response = await client.PatchAsJsonAsync($"/users/{Guid.NewGuid()}", new { name = "XY" });
+        var response = await client.PatchAsJsonAsync($"/api/v1/users/{Guid.NewGuid()}", new { name = "XY" });
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    // ── DELETE /users/{id} ────────────────────────────────────────────────────
+    // ── DELETE /api/v1/users/{id} ────────────────────────────────────────────────────
 
     [Fact]
     public async Task DeleteUser_ExistingUser_Returns200()
@@ -205,7 +205,7 @@ public class UsersIntegrationTests : IClassFixture<ApiFactory>
         var client = _factory.CreateAdminClient();
 
         // Create a throwaway user first
-        var createResp = await client.PostAsJsonAsync("/users", new
+        var createResp = await client.PostAsJsonAsync("/api/v1/users", new
         {
             name = "To Delete",
             email = $"todel_{Guid.NewGuid():N}@example.com",
@@ -213,7 +213,7 @@ public class UsersIntegrationTests : IClassFixture<ApiFactory>
         });
         var created = await createResp.Content.ReadFromJsonAsync<Response<UserDto>>();
 
-        var response = await client.DeleteAsync($"/users/{created!.Data!.Id}");
+        var response = await client.DeleteAsync($"/api/v1/users/{created!.Data!.Id}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
@@ -222,7 +222,7 @@ public class UsersIntegrationTests : IClassFixture<ApiFactory>
     public async Task DeleteUser_NotFound_Returns404()
     {
         var client = _factory.CreateAdminClient();
-        var response = await client.DeleteAsync($"/users/{Guid.NewGuid()}");
+        var response = await client.DeleteAsync($"/api/v1/users/{Guid.NewGuid()}");
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
@@ -230,7 +230,7 @@ public class UsersIntegrationTests : IClassFixture<ApiFactory>
     public async Task DeleteUser_NoPermission_Returns403()
     {
         var client = _factory.CreateViewerClient();
-        var response = await client.DeleteAsync($"/users/{EntityBuilder.RegularUserId}");
+        var response = await client.DeleteAsync($"/api/v1/users/{EntityBuilder.RegularUserId}");
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 }

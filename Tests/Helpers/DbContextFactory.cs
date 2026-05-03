@@ -35,6 +35,7 @@ public static class EntityBuilder
     public static readonly Guid ViewerRoleId = new("11111111-0000-0000-0000-000000000002");
     public static readonly Guid AdminUserId = new("22222222-0000-0000-0000-000000000001");
     public static readonly Guid RegularUserId = new("22222222-0000-0000-0000-000000000002");
+    public static readonly Guid ManagerUserId = new("22222222-0000-0000-0000-000000000003");
     public static readonly Guid ReadDepartmentPermId = new("66666666-0000-0000-0000-000000000010");
     public static readonly Guid CreateDepartmentPermId = new("66666666-0000-0000-0000-000000000011");
     public static readonly Guid UpdateDepartmentPermId = new("66666666-0000-0000-0000-000000000012");

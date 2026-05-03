@@ -15,23 +15,26 @@ try
 
     builder.Configuration.AddEnvironmentVariables();
 
-    builder.Host.UseSerilog((context, services, loggerConfiguration) =>
+    if (!builder.Environment.IsEnvironment("Testing"))
     {
-        loggerConfiguration
-            .ReadFrom.Configuration(context.Configuration)
-            .ReadFrom.Services(services)
-            .Enrich.FromLogContext()
-            .WriteTo.Console();
-
-        if (!context.HostingEnvironment.IsDevelopment())
+        builder.Host.UseSerilog((context, services, loggerConfiguration) =>
         {
-            loggerConfiguration.WriteTo.File(
-                path: "logs/log-.txt",
-                rollingInterval: RollingInterval.Day,
-                retainedFileCountLimit: 14,
-                shared: true);
-        }
-    });
+            loggerConfiguration
+                .ReadFrom.Configuration(context.Configuration)
+                .ReadFrom.Services(services)
+                .Enrich.FromLogContext()
+                .WriteTo.Console();
+
+            if (!context.HostingEnvironment.IsDevelopment())
+            {
+                loggerConfiguration.WriteTo.File(
+                    path: "logs/log-.txt",
+                    rollingInterval: RollingInterval.Day,
+                    retainedFileCountLimit: 14,
+                    shared: true);
+            }
+        });
+    }
 
     var app = builder.Build();
 

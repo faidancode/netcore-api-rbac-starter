@@ -140,7 +140,7 @@ public class DepartmentsServiceTests
         var svc = CreateService(db);
 
         var result = await svc.UpdateAsync(EntityBuilder.EngineeringId,
-            new UpdateDepartmentRequest("Platform", "Platform engineering"), CancellationToken.None);
+            new UpdateDepartmentRequest("Platform", "Platform engineering", IsActive: true), CancellationToken.None);
 
         result.Name.Should().Be("Platform");
         result.Description.Should().Be("Platform engineering");
@@ -155,7 +155,7 @@ public class DepartmentsServiceTests
 
         await Assert.ThrowsAsync<ConflictException>(() =>
             svc.UpdateAsync(EntityBuilder.EngineeringId,
-                new UpdateDepartmentRequest("Human Resources", null), CancellationToken.None));
+                new UpdateDepartmentRequest("Human Resources", null, null), CancellationToken.None));
     }
 
     [Fact]
@@ -165,7 +165,7 @@ public class DepartmentsServiceTests
         var svc = CreateService(db);
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
-            svc.UpdateAsync(Guid.NewGuid(), new UpdateDepartmentRequest("X", null), CancellationToken.None));
+            svc.UpdateAsync(Guid.NewGuid(), new UpdateDepartmentRequest("X", null, null), CancellationToken.None));
     }
 
     [Fact]
@@ -236,7 +236,7 @@ public class DepartmentValidatorTests
     [Fact]
     public void Update_NullFields_PassesValidation()
     {
-        var result = _updateValidator.TestValidate(new UpdateDepartmentRequest(null, null));
+        var result = _updateValidator.TestValidate(new UpdateDepartmentRequest(null, null, null));
         result.ShouldNotHaveAnyValidationErrors();
     }
 
@@ -244,7 +244,7 @@ public class DepartmentValidatorTests
     public void Update_TooLongName_FailsValidation()
     {
         var name = new string('A', 51);
-        var result = _updateValidator.TestValidate(new UpdateDepartmentRequest(name, null));
+        var result = _updateValidator.TestValidate(new UpdateDepartmentRequest(name, null, null));
         result.ShouldHaveValidationErrorFor(x => x.Name);
     }
 
@@ -252,7 +252,7 @@ public class DepartmentValidatorTests
     public void Update_TooLongDescription_FailsValidation()
     {
         var description = new string('D', 251);
-        var result = _updateValidator.TestValidate(new UpdateDepartmentRequest(null, description));
+        var result = _updateValidator.TestValidate(new UpdateDepartmentRequest(null, description, null));
         result.ShouldHaveValidationErrorFor(x => x.Description);
     }
 }

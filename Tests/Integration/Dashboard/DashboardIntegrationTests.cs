@@ -21,7 +21,7 @@ public class DashboardIntegrationTests : IClassFixture<ApiFactory>
     {
         var client = _factory.CreateAdminClient();
 
-        var response = await client.GetAsync("/dashboard");
+        var response = await client.GetAsync("/api/v1/dashboard");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -37,7 +37,7 @@ public class DashboardIntegrationTests : IClassFixture<ApiFactory>
     [Fact]
     public async Task GetDashboard_Unauthenticated_Returns401()
     {
-        var response = await _factory.CreateAnonClient().GetAsync("/dashboard");
+        var response = await _factory.CreateAnonClient().GetAsync("/api/v1/dashboard");
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }

@@ -19,7 +19,7 @@ public class PositionsIntegrationTests : IClassFixture<ApiFactory>
     {
         var client = _factory.CreateAdminClient();
         var name = $"Finance_{Guid.NewGuid():N}";
-        var response = await client.PostAsJsonAsync("/positions", new { name, description = "Financial", departmentId = EntityBuilder.EngineeringId });
+        var response = await client.PostAsJsonAsync("/api/v1/positions", new { name, description = "Financial", departmentId = EntityBuilder.EngineeringId });
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         var body = await response.Content.ReadFromJsonAsync<Response<PositionDto>>();
@@ -31,7 +31,7 @@ public class PositionsIntegrationTests : IClassFixture<ApiFactory>
     public async Task CreatePosition_DuplicateName_Returns409()
     {
         var client = _factory.CreateAdminClient();
-        var response = await client.PostAsJsonAsync("/positions", new { name = "Senior Developer", departmentId = EntityBuilder.EngineeringId });
+        var response = await client.PostAsJsonAsync("/api/v1/positions", new { name = "Senior Developer", departmentId = EntityBuilder.EngineeringId });
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
     }
 
@@ -39,7 +39,7 @@ public class PositionsIntegrationTests : IClassFixture<ApiFactory>
     public async Task CreatePosition_EmptyName_Returns400()
     {
         var client = _factory.CreateAdminClient();
-        var response = await client.PostAsJsonAsync("/positions", new { name = "", departmentId = EntityBuilder.EngineeringId });
+        var response = await client.PostAsJsonAsync("/api/v1/positions", new { name = "", departmentId = EntityBuilder.EngineeringId });
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
@@ -47,7 +47,7 @@ public class PositionsIntegrationTests : IClassFixture<ApiFactory>
     public async Task CreatePosition_Unauthenticated_Returns401()
     {
         var response = await _factory.CreateAnonClient()
-            .PostAsJsonAsync("/positions", new { name = "ValidName", departmentId = EntityBuilder.EngineeringId });
+            .PostAsJsonAsync("/api/v1/positions", new { name = "ValidName", departmentId = EntityBuilder.EngineeringId });
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
@@ -55,7 +55,7 @@ public class PositionsIntegrationTests : IClassFixture<ApiFactory>
     public async Task CreatePosition_ViewerRole_Returns403()
     {
         var response = await _factory.CreateViewerClient()
-            .PostAsJsonAsync("/positions", new { name = "ValidName", departmentId = EntityBuilder.EngineeringId });
+            .PostAsJsonAsync("/api/v1/positions", new { name = "ValidName", departmentId = EntityBuilder.EngineeringId });
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
@@ -65,7 +65,7 @@ public class PositionsIntegrationTests : IClassFixture<ApiFactory>
     public async Task GetAllPositions_Returns200WithList()
     {
         var client = _factory.CreateAdminClient();
-        var response = await client.GetAsync("/positions");
+        var response = await client.GetAsync("/api/v1/positions");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<Response<IEnumerable<PositionDto>>>();
@@ -78,7 +78,7 @@ public class PositionsIntegrationTests : IClassFixture<ApiFactory>
     public async Task GetPositionById_ValidId_Returns200()
     {
         var client = _factory.CreateAdminClient();
-        var response = await client.GetAsync($"/positions/{EntityBuilder.SeniorDevId}");
+        var response = await client.GetAsync($"/api/v1/positions/{EntityBuilder.SeniorDevId}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<Response<PositionDto>>();
@@ -89,7 +89,7 @@ public class PositionsIntegrationTests : IClassFixture<ApiFactory>
     public async Task GetPositionById_NotFound_Returns404()
     {
         var client = _factory.CreateAdminClient();
-        var response = await client.GetAsync($"/positions/{Guid.NewGuid()}");
+        var response = await client.GetAsync($"/api/v1/positions/{Guid.NewGuid()}");
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
@@ -101,7 +101,7 @@ public class PositionsIntegrationTests : IClassFixture<ApiFactory>
         var client = _factory.CreateAdminClient();
 
         var response = await client.PatchAsJsonAsync(
-            $"/positions/{EntityBuilder.HrManagerId}",
+            $"/api/v1/positions/{EntityBuilder.HrManagerId}",
             new { description = "Updated HR", departmentId = EntityBuilder.EngineeringId });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -116,7 +116,7 @@ public class PositionsIntegrationTests : IClassFixture<ApiFactory>
         var client = _factory.CreateAdminClient();
 
         var response = await client.PatchAsJsonAsync(
-            $"/positions/{EntityBuilder.SeniorDevId}",
+            $"/api/v1/positions/{EntityBuilder.SeniorDevId}",
             new { name = "HR Manager", departmentId = EntityBuilder.HrDeptId });
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
@@ -129,11 +129,11 @@ public class PositionsIntegrationTests : IClassFixture<ApiFactory>
     {
         var client = _factory.CreateAdminClient();
 
-        var createResp = await client.PostAsJsonAsync("/positions",
+        var createResp = await client.PostAsJsonAsync("/api/v1/positions",
             new { name = $"ToDelete_{Guid.NewGuid():N}", departmentId = EntityBuilder.EngineeringId });
         var created = await createResp.Content.ReadFromJsonAsync<Response<PositionDto>>();
 
-        var response = await client.DeleteAsync($"/positions/{created!.Data!.Id}");
+        var response = await client.DeleteAsync($"/api/v1/positions/{created!.Data!.Id}");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
@@ -141,7 +141,7 @@ public class PositionsIntegrationTests : IClassFixture<ApiFactory>
     public async Task DeletePosition_NotFound_Returns404()
     {
         var client = _factory.CreateAdminClient();
-        var response = await client.DeleteAsync($"/positions/{Guid.NewGuid()}");
+        var response = await client.DeleteAsync($"/api/v1/positions/{Guid.NewGuid()}");
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 }

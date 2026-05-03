@@ -42,7 +42,10 @@ public static class AppPipeline
         app.UseMiddleware<LoggingContextMiddleware>();
 
         // 5. Serilog request logging cukup sekali, setelah context lengkap
-        app.UseSerilogRequestLogging();
+        if (!app.Environment.IsEnvironment("Testing"))
+        {
+            app.UseSerilogRequestLogging();
+        }
 
         // 6. Idempotency (butuh user + requestId)
         app.UseMiddleware<IdempotencyMiddleware>();

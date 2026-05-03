@@ -19,7 +19,7 @@ public class DepartmentsIntegrationTests : IClassFixture<ApiFactory>
     {
         var client = _factory.CreateAdminClient();
         var name = $"Finance_{Guid.NewGuid():N}";
-        var response = await client.PostAsJsonAsync("/departments", new { name, description = "Financial" });
+        var response = await client.PostAsJsonAsync("/api/v1/departments", new { name, description = "Financial" });
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         var body = await response.Content.ReadFromJsonAsync<Response<DepartmentDto>>();
@@ -30,7 +30,7 @@ public class DepartmentsIntegrationTests : IClassFixture<ApiFactory>
     public async Task CreateDepartment_DuplicateName_Returns409()
     {
         var client = _factory.CreateAdminClient();
-        var response = await client.PostAsJsonAsync("/departments", new { name = "Engineering" });
+        var response = await client.PostAsJsonAsync("/api/v1/departments", new { name = "Engineering" });
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
     }
 
@@ -38,7 +38,7 @@ public class DepartmentsIntegrationTests : IClassFixture<ApiFactory>
     public async Task CreateDepartment_EmptyName_Returns400()
     {
         var client = _factory.CreateAdminClient();
-        var response = await client.PostAsJsonAsync("/departments", new { name = "" });
+        var response = await client.PostAsJsonAsync("/api/v1/departments", new { name = "" });
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
@@ -46,7 +46,7 @@ public class DepartmentsIntegrationTests : IClassFixture<ApiFactory>
     public async Task CreateDepartment_Unauthenticated_Returns401()
     {
         var response = await _factory.CreateAnonClient()
-            .PostAsJsonAsync("/departments", new { name = "ValidName" });
+            .PostAsJsonAsync("/api/v1/departments", new { name = "ValidName" });
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
@@ -54,7 +54,7 @@ public class DepartmentsIntegrationTests : IClassFixture<ApiFactory>
     public async Task CreateDepartment_ViewerRole_Returns403()
     {
         var response = await _factory.CreateViewerClient()
-            .PostAsJsonAsync("/departments", new { name = "ValidName" });
+            .PostAsJsonAsync("/api/v1/departments", new { name = "ValidName" });
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
@@ -64,7 +64,7 @@ public class DepartmentsIntegrationTests : IClassFixture<ApiFactory>
     public async Task GetAllDepartments_Returns200WithList()
     {
         var client = _factory.CreateAdminClient();
-        var response = await client.GetAsync("/departments");
+        var response = await client.GetAsync("/api/v1/departments");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<Response<IEnumerable<DepartmentDto>>>();
@@ -77,7 +77,7 @@ public class DepartmentsIntegrationTests : IClassFixture<ApiFactory>
     public async Task GetDepartmentById_ValidId_Returns200()
     {
         var client = _factory.CreateAdminClient();
-        var response = await client.GetAsync($"/departments/{EntityBuilder.EngineeringId}");
+        var response = await client.GetAsync($"/api/v1/departments/{EntityBuilder.EngineeringId}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<Response<DepartmentDto>>();
@@ -88,7 +88,7 @@ public class DepartmentsIntegrationTests : IClassFixture<ApiFactory>
     public async Task GetDepartmentById_NotFound_Returns404()
     {
         var client = _factory.CreateAdminClient();
-        var response = await client.GetAsync($"/departments/{Guid.NewGuid()}");
+        var response = await client.GetAsync($"/api/v1/departments/{Guid.NewGuid()}");
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
@@ -100,7 +100,7 @@ public class DepartmentsIntegrationTests : IClassFixture<ApiFactory>
         var client = _factory.CreateAdminClient();
 
         var response = await client.PatchAsJsonAsync(
-            $"/departments/{EntityBuilder.HrDeptId}",
+            $"/api/v1/departments/{EntityBuilder.HrDeptId}",
             new { description = "Updated HR" });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -114,7 +114,7 @@ public class DepartmentsIntegrationTests : IClassFixture<ApiFactory>
         var client = _factory.CreateAdminClient();
 
         var response = await client.PatchAsJsonAsync(
-            $"/departments/{EntityBuilder.EngineeringId}",
+            $"/api/v1/departments/{EntityBuilder.EngineeringId}",
             new { name = "Human Resources" });
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
@@ -127,11 +127,11 @@ public class DepartmentsIntegrationTests : IClassFixture<ApiFactory>
     {
         var client = _factory.CreateAdminClient();
 
-        var createResp = await client.PostAsJsonAsync("/departments",
+        var createResp = await client.PostAsJsonAsync("/api/v1/departments",
             new { name = $"ToDelete_{Guid.NewGuid():N}" });
         var created = await createResp.Content.ReadFromJsonAsync<Response<DepartmentDto>>();
 
-        var response = await client.DeleteAsync($"/departments/{created!.Data!.Id}");
+        var response = await client.DeleteAsync($"/api/v1/departments/{created!.Data!.Id}");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
@@ -139,7 +139,7 @@ public class DepartmentsIntegrationTests : IClassFixture<ApiFactory>
     public async Task DeleteDepartment_NotFound_Returns404()
     {
         var client = _factory.CreateAdminClient();
-        var response = await client.DeleteAsync($"/departments/{Guid.NewGuid()}");
+        var response = await client.DeleteAsync($"/api/v1/departments/{Guid.NewGuid()}");
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 }

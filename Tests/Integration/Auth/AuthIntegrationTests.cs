@@ -13,14 +13,14 @@ public class AuthIntegrationTests : IClassFixture<ApiFactory>
 
     public AuthIntegrationTests(ApiFactory factory) => _factory = factory;
 
-    // ── POST /auth/login ──────────────────────────────────────────────────────
+    // ── POST /api/v1/auth/login ──────────────────────────────────────────────────────
 
     [Fact]
     public async Task Login_ValidCredentials_Returns200WithTokens()
     {
         var client = _factory.CreateAnonClient();
 
-        var response = await client.PostAsJsonAsync("/auth/login",
+        var response = await client.PostAsJsonAsync("/api/v1/auth/login",
             new { email = "admin@example.com", password = "Admin@123" });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -38,7 +38,7 @@ public class AuthIntegrationTests : IClassFixture<ApiFactory>
     {
         var client = _factory.CreateAnonClient();
 
-        var response = await client.PostAsJsonAsync("/auth/login",
+        var response = await client.PostAsJsonAsync("/api/v1/auth/login",
             new { email = "admin@example.com", password = "WRONG" });
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -49,7 +49,7 @@ public class AuthIntegrationTests : IClassFixture<ApiFactory>
     {
         var client = _factory.CreateAnonClient();
 
-        var response = await client.PostAsJsonAsync("/auth/login",
+        var response = await client.PostAsJsonAsync("/api/v1/auth/login",
             new { email = "ghost@example.com", password = "Admin@123" });
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -61,13 +61,13 @@ public class AuthIntegrationTests : IClassFixture<ApiFactory>
         var client = _factory.CreateAnonClient();
 
         // Missing password, invalid email
-        var response = await client.PostAsJsonAsync("/auth/login",
+        var response = await client.PostAsJsonAsync("/api/v1/auth/login",
             new { email = "not-an-email", password = "" });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
-    // ── POST /auth/refresh ────────────────────────────────────────────────────
+    // ── POST /api/v1/auth/refresh ────────────────────────────────────────────────────
 
     [Fact]
     public async Task Refresh_ValidToken_Returns200WithNewTokens()
@@ -75,12 +75,12 @@ public class AuthIntegrationTests : IClassFixture<ApiFactory>
         var client = _factory.CreateAnonClient();
 
         // First login to obtain a refresh token
-        var loginResp = await client.PostAsJsonAsync("/auth/login",
+        var loginResp = await client.PostAsJsonAsync("/api/v1/auth/login",
             new { email = "admin@example.com", password = "Admin@123" });
         var loginBody = await loginResp.Content.ReadFromJsonAsync<Response<LoginResponse>>();
         var refreshToken = loginBody!.Data!.RefreshToken;
 
-        var response = await client.PostAsJsonAsync("/auth/refresh",
+        var response = await client.PostAsJsonAsync("/api/v1/auth/refresh",
             new { refreshToken });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -96,20 +96,20 @@ public class AuthIntegrationTests : IClassFixture<ApiFactory>
     {
         var client = _factory.CreateAnonClient();
 
-        var response = await client.PostAsJsonAsync("/auth/refresh",
+        var response = await client.PostAsJsonAsync("/api/v1/auth/refresh",
             new { refreshToken = "fake-token-that-does-not-exist" });
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
-    // ── POST /auth/me ─────────────────────────────────────────────────────────
+    // ── POST /api/v1/auth/me ─────────────────────────────────────────────────────────
 
     [Fact]
     public async Task Me_Authenticated_Returns200WithUserInfo()
     {
         var client = _factory.CreateAdminClient();
 
-        var response = await client.PostAsync("/auth/me", null);
+        var response = await client.PostAsync("/api/v1/auth/me", null);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<Response<MeResponse>>();
@@ -122,19 +122,19 @@ public class AuthIntegrationTests : IClassFixture<ApiFactory>
     {
         var client = _factory.CreateAnonClient();
 
-        var response = await client.PostAsync("/auth/me", null);
+        var response = await client.PostAsync("/api/v1/auth/me", null);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
-    // ── GET /auth/me/permissions ──────────────────────────────────────────────
+    // ── GET /api/v1/auth/me/permissions ──────────────────────────────────────────────
 
     [Fact]
     public async Task GetMyPermissions_Authenticated_ReturnsPermissions()
     {
         var client = _factory.CreateAdminClient();
 
-        var response = await client.GetAsync("/auth/me/permissions");
+        var response = await client.GetAsync("/api/v1/auth/me/permissions");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<Response<IEnumerable<PermissionDto>>>();
@@ -146,7 +146,7 @@ public class AuthIntegrationTests : IClassFixture<ApiFactory>
     {
         var client = _factory.CreateAnonClient();
 
-        var response = await client.GetAsync("/auth/me/permissions");
+        var response = await client.GetAsync("/api/v1/auth/me/permissions");
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }

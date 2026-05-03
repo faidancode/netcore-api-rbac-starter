@@ -19,7 +19,7 @@ public class PositionsServiceTests
         await EntityBuilder.SeedDefaultDataAsync(db);
         var svc = new PositionsService(db);
 
-        var result = await svc.CreateAsync(new CreatePositionRequest("Staff", "Staff position", EntityBuilder.EngineeringId), CancellationToken.None);
+        var result = await svc.CreateAsync(new CreatePositionRequest("Staff", EntityBuilder.EngineeringId, "Staff position"), CancellationToken.None);
 
         result.Id.Should().NotBeEmpty();
         result.Name.Should().Be("Staff");
@@ -35,7 +35,7 @@ public class PositionsServiceTests
         var svc = new PositionsService(db);
 
         await Assert.ThrowsAsync<ConflictException>(() =>
-            svc.CreateAsync(new CreatePositionRequest("Senior Developer", "Duplicate", EntityBuilder.EngineeringId), CancellationToken.None));
+            svc.CreateAsync(new CreatePositionRequest("Senior Developer", EntityBuilder.EngineeringId, "Duplicate"), CancellationToken.None));
     }
 
     [Fact]
@@ -102,7 +102,7 @@ public class PositionsServiceTests
         var svc = new PositionsService(db);
 
         var result = await svc.UpdateAsync(EntityBuilder.SeniorDevId,
-            new UpdatePositionRequest("Lead Developer", "Lead position", null), CancellationToken.None);
+            new UpdatePositionRequest("Lead Developer", "Lead position", null, null), CancellationToken.None);
 
         result.Name.Should().Be("Lead Developer");
         result.Description.Should().Be("Lead position");
@@ -122,7 +122,7 @@ public class PositionsServiceTests
 
         await Assert.ThrowsAsync<ConflictException>(() =>
             svc.UpdateAsync(EntityBuilder.SeniorDevId,
-                new UpdatePositionRequest("Junior Developer", null, null), CancellationToken.None));
+                new UpdatePositionRequest("Junior Developer", null, null, null), CancellationToken.None));
     }
 
     [Fact]
@@ -132,7 +132,7 @@ public class PositionsServiceTests
         var svc = new PositionsService(db);
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
-            svc.UpdateAsync(Guid.NewGuid(), new UpdatePositionRequest("X", null, null), CancellationToken.None));
+            svc.UpdateAsync(Guid.NewGuid(), new UpdatePositionRequest("X", null, null, null), CancellationToken.None));
     }
 
     [Fact]
@@ -170,7 +170,7 @@ public class PositionValidatorTests
     public void Create_ValidRequest_PassesValidation()
     {
         var result = _createValidator.TestValidate(
-            new CreatePositionRequest("Staff", "Staff position", Guid.NewGuid()));
+            new CreatePositionRequest("Staff", Guid.NewGuid(), "Staff position"));
         result.ShouldNotHaveAnyValidationErrors();
     }
 
@@ -178,7 +178,7 @@ public class PositionValidatorTests
     public void Create_EmptyName_FailsValidation()
     {
         var result = _createValidator.TestValidate(
-            new CreatePositionRequest("", "Staff position", Guid.NewGuid()));
+            new CreatePositionRequest("", Guid.NewGuid(), "Staff position"));
         result.ShouldHaveValidationErrorFor(x => x.Name);
     }
 
@@ -186,7 +186,7 @@ public class PositionValidatorTests
     public void Create_EmptyDepartmentId_FailsValidation()
     {
         var result = _createValidator.TestValidate(
-            new CreatePositionRequest("Staff", "Staff position", Guid.Empty));
+            new CreatePositionRequest("Staff", Guid.Empty, "Staff position"));
         result.ShouldHaveValidationErrorFor(x => x.DepartmentId);
     }
 
@@ -195,7 +195,7 @@ public class PositionValidatorTests
     {
         var name = new string('A', 51);
         var result = _createValidator.TestValidate(
-            new CreatePositionRequest(name, "Staff position", Guid.NewGuid()));
+            new CreatePositionRequest(name, Guid.NewGuid(), "Staff position"));
         result.ShouldHaveValidationErrorFor(x => x.Name);
     }
 
@@ -204,14 +204,14 @@ public class PositionValidatorTests
     {
         var description = new string('D', 251);
         var result = _createValidator.TestValidate(
-            new CreatePositionRequest("Staff", description, Guid.NewGuid()));
+            new CreatePositionRequest("Staff", Guid.NewGuid(), description));
         result.ShouldHaveValidationErrorFor(x => x.Description);
     }
 
     [Fact]
     public void Update_NullFields_PassesValidation()
     {
-        var result = _updateValidator.TestValidate(new UpdatePositionRequest(null, null, null));
+        var result = _updateValidator.TestValidate(new UpdatePositionRequest(null, null, null, null));
         result.ShouldNotHaveAnyValidationErrors();
     }
 
@@ -219,7 +219,7 @@ public class PositionValidatorTests
     public void Update_TooLongName_FailsValidation()
     {
         var name = new string('A', 51);
-        var result = _updateValidator.TestValidate(new UpdatePositionRequest(name, null, null));
+        var result = _updateValidator.TestValidate(new UpdatePositionRequest(name, null, null, null));
         result.ShouldHaveValidationErrorFor(x => x.Name);
     }
 
@@ -227,7 +227,7 @@ public class PositionValidatorTests
     public void Update_TooLongDescription_FailsValidation()
     {
         var description = new string('D', 251);
-        var result = _updateValidator.TestValidate(new UpdatePositionRequest(null, description, null));
+        var result = _updateValidator.TestValidate(new UpdatePositionRequest(null, description, null, null));
         result.ShouldHaveValidationErrorFor(x => x.Description);
     }
 }

@@ -13,13 +13,13 @@ public class RolesIntegrationTests : IClassFixture<ApiFactory>
     private readonly ApiFactory _factory;
     public RolesIntegrationTests(ApiFactory factory) => _factory = factory;
 
-    // ── POST /roles ───────────────────────────────────────────────────────────
+    // ── POST /api/v1/roles ───────────────────────────────────────────────────────────
 
     [Fact]
     public async Task CreateRole_ValidRequest_Returns201()
     {
         var client = _factory.CreateAdminClient();
-        var response = await client.PostAsJsonAsync("/roles",
+        var response = await client.PostAsJsonAsync("/api/v1/roles",
             new
             {
                 name = $"TestRole_{Guid.NewGuid():N}",
@@ -37,7 +37,7 @@ public class RolesIntegrationTests : IClassFixture<ApiFactory>
     public async Task CreateRole_DuplicateName_Returns409()
     {
         var client = _factory.CreateAdminClient();
-        var response = await client.PostAsJsonAsync("/roles", new { name = "Admin", permissionIds = Array.Empty<Guid>() });
+        var response = await client.PostAsJsonAsync("/api/v1/roles", new { name = "Admin", permissionIds = Array.Empty<Guid>() });
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
     }
 
@@ -45,7 +45,7 @@ public class RolesIntegrationTests : IClassFixture<ApiFactory>
     public async Task CreateRole_EmptyName_Returns400()
     {
         var client = _factory.CreateAdminClient();
-        var response = await client.PostAsJsonAsync("/roles", new { name = "", permissionIds = Array.Empty<Guid>() });
+        var response = await client.PostAsJsonAsync("/api/v1/roles", new { name = "", permissionIds = Array.Empty<Guid>() });
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
@@ -53,18 +53,18 @@ public class RolesIntegrationTests : IClassFixture<ApiFactory>
     public async Task CreateRole_Unauthenticated_Returns401()
     {
         var response = await _factory.CreateAnonClient().PostAsJsonAsync(
-            "/roles",
+            "/api/v1/roles",
             new { name = "ValidRole", permissionIds = Array.Empty<Guid>() });
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
-    // ── GET /roles ────────────────────────────────────────────────────────────
+    // ── GET /api/v1/roles ────────────────────────────────────────────────────────────
 
     [Fact]
     public async Task GetAllRoles_Returns200WithRoles()
     {
         var client = _factory.CreateAdminClient();
-        var response = await client.GetAsync("/roles");
+        var response = await client.GetAsync("/api/v1/roles");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<Response<IEnumerable<RoleDto>>>();
@@ -75,7 +75,7 @@ public class RolesIntegrationTests : IClassFixture<ApiFactory>
     public async Task GetPermissions_Returns200WithMasterPermissions()
     {
         var client = _factory.CreateAdminClient();
-        var response = await client.GetAsync("/roles/permissions");
+        var response = await client.GetAsync("/api/v1/roles/permissions");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<Response<IEnumerable<PermissionDto>>>();
@@ -83,13 +83,13 @@ public class RolesIntegrationTests : IClassFixture<ApiFactory>
         body.Data.Should().Contain(p => p.Subject == "Employee" && p.Action == "create");
     }
 
-    // ── GET /roles/{id} ───────────────────────────────────────────────────────
+    // ── GET /api/v1/roles/{id} ───────────────────────────────────────────────────────
 
     [Fact]
     public async Task GetRoleById_ValidId_Returns200()
     {
         var client = _factory.CreateAdminClient();
-        var response = await client.GetAsync($"/roles/{EntityBuilder.AdminRoleId}");
+        var response = await client.GetAsync($"/api/v1/roles/{EntityBuilder.AdminRoleId}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<Response<RoleDto>>();
@@ -101,18 +101,18 @@ public class RolesIntegrationTests : IClassFixture<ApiFactory>
     public async Task GetRoleById_NotFound_Returns404()
     {
         var client = _factory.CreateAdminClient();
-        var response = await client.GetAsync($"/roles/{Guid.NewGuid()}");
+        var response = await client.GetAsync($"/api/v1/roles/{Guid.NewGuid()}");
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    // ── PATCH /roles/{id} ────────────────────────────────────────────────────
+    // ── PATCH /api/v1/roles/{id} ────────────────────────────────────────────────────
 
     [Fact]
     public async Task UpdateRole_ValidData_Returns200()
     {
         var client = _factory.CreateAdminClient();
         var response = await client.PatchAsJsonAsync(
-            $"/roles/{EntityBuilder.ViewerRoleId}",
+            $"/api/v1/roles/{EntityBuilder.ViewerRoleId}",
             new
             {
                 description = "Read only access",
@@ -125,7 +125,7 @@ public class RolesIntegrationTests : IClassFixture<ApiFactory>
         body.Data.Permissions.Should().HaveCount(2);
     }
 
-    // ── DELETE /roles/{id} ────────────────────────────────────────────────────
+    // ── DELETE /api/v1/roles/{id} ────────────────────────────────────────────────────
 
     [Fact]
     public async Task DeleteRole_ExistingRole_Returns200()
@@ -133,15 +133,15 @@ public class RolesIntegrationTests : IClassFixture<ApiFactory>
         var client = _factory.CreateAdminClient();
 
         // Create a role to delete
-        var createResp = await client.PostAsJsonAsync("/roles",
+        var createResp = await client.PostAsJsonAsync("/api/v1/roles",
             new { name = $"ToDelete_{Guid.NewGuid():N}", permissionIds = Array.Empty<Guid>() });
         var created = await createResp.Content.ReadFromJsonAsync<Response<RoleDto>>();
 
-        var response = await client.DeleteAsync($"/roles/{created!.Data!.Id}");
+        var response = await client.DeleteAsync($"/api/v1/roles/{created!.Data!.Id}");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
-    // ── POST /roles/{id}/permissions ─────────────────────────────────────────
+    // ── POST /api/v1/roles/{id}/permissions ─────────────────────────────────────────
 
     [Fact]
     public async Task AssignPermissions_ValidRequest_Returns200WithUpdatedPermissions()
@@ -150,7 +150,7 @@ public class RolesIntegrationTests : IClassFixture<ApiFactory>
 
         // Viewer starts with no permissions — assign manage:all
         var response = await client.PostAsJsonAsync(
-            $"/roles/{EntityBuilder.ViewerRoleId}/permissions",
+            $"/api/v1/roles/{EntityBuilder.ViewerRoleId}/permissions",
             new { permissionIds = new[] { EntityBuilder.ManageAllPermId } });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -164,7 +164,7 @@ public class RolesIntegrationTests : IClassFixture<ApiFactory>
         var client = _factory.CreateAdminClient();
 
         var response = await client.PostAsJsonAsync(
-            $"/roles/{EntityBuilder.ViewerRoleId}/permissions",
+            $"/api/v1/roles/{EntityBuilder.ViewerRoleId}/permissions",
             new { permissionIds = Array.Empty<Guid>() });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -178,7 +178,7 @@ public class RolesIntegrationTests : IClassFixture<ApiFactory>
         var client = _factory.CreateAdminClient();
 
         var response = await client.PostAsJsonAsync(
-            $"/roles/{EntityBuilder.AdminRoleId}/permissions",
+            $"/api/v1/roles/{EntityBuilder.AdminRoleId}/permissions",
             new { permissionIds = new[] { Guid.NewGuid() } });
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
