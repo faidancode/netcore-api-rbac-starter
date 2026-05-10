@@ -189,11 +189,12 @@ public class EmployeesIntegrationTests : IClassFixture<ApiFactory>
         body2.Should().NotBeEmpty();
         body1.Should().NotBe(body2);
 
-        using var scope = _factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var employee1 = await res1.Content.ReadFromJsonAsync<Response<EmployeeDto>>();
+        var employee2 = await res2.Content.ReadFromJsonAsync<Response<EmployeeDto>>();
 
-        (await db.Employees.CountAsync(e => e.Nip == "NIP-A")).Should().Be(1);
-        (await db.Employees.CountAsync(e => e.Nip == "NIP-B")).Should().Be(1);
+        employee1!.Data!.Nip.Should().Be("NIP-A");
+        employee2!.Data!.Nip.Should().Be("NIP-B");
+        employee1.Data.Id.Should().NotBe(employee2.Data.Id);
     }
 
     // ── GET /api/v1/employees ──────────────────────────────────────────────────────

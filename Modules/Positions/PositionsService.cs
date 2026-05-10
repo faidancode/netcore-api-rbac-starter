@@ -5,6 +5,7 @@ using netcore_api_rbac_starter.Modules.Positions.Dtos;
 using Microsoft.EntityFrameworkCore;
 using netcore_api_rbac_starter.Common.Models;
 using netcore_api_rbac_starter.Common.Extensions;
+using netcore_api_rbac_starter.Security;
 
 namespace netcore_api_rbac_starter.Modules.Positions;
 
@@ -20,8 +21,18 @@ public interface IPositionsService
 public class PositionsService : IPositionsService
 {
     private readonly AppDbContext _db;
+    private readonly IEventDispatcher? _eventDispatcher;
+    private readonly ICurrentUserService? _currentUser;
 
-    public PositionsService(AppDbContext db) => _db = db;
+    public PositionsService(
+        AppDbContext db,
+        IEventDispatcher? eventDispatcher = null,
+        ICurrentUserService? currentUser = null)
+    {
+        _db = db;
+        _eventDispatcher = eventDispatcher;
+        _currentUser = currentUser;
+    }
 
     public async Task<PositionDto> CreateAsync(CreatePositionRequest request, CancellationToken ct)
     {
@@ -34,6 +45,8 @@ public class PositionsService : IPositionsService
         if (exists)
             throw new ConflictException($"Position '{request.Name}' already exists in this department.");
 
+        await using var tx = await _db.Database.BeginTransactionAsync(ct);
+
         var position = new Position
         {
             Name = request.Name,
@@ -43,6 +56,16 @@ public class PositionsService : IPositionsService
 
         _db.Positions.Add(position);
         await _db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
+
+        await DispatchAuditAsync(
+            new PositionCreatedEvent(
+                position.Id,
+                position.Name,
+                position.Description,
+                position.DepartmentId,
+                _currentUser?.RequestId),
+            ct);
 
         return await GetByIdAsync(position.Id, ct);
     }
@@ -106,6 +129,15 @@ public class PositionsService : IPositionsService
             .FirstOrDefaultAsync(p => p.Id == id, ct)
             ?? throw new NotFoundException("Position", id);
 
+        var before = new
+        {
+            position.Id,
+            position.Name,
+            position.Description,
+            position.DepartmentId,
+            position.IsActive
+        };
+
         var targetDeptId = request.DepartmentId ?? position.DepartmentId;
 
         if (request.DepartmentId.HasValue && request.DepartmentId != position.DepartmentId)
@@ -134,7 +166,17 @@ public class PositionsService : IPositionsService
         if (request.IsActive.HasValue)
             position.IsActive = request.IsActive.Value;
 
+        await using var tx = await _db.Database.BeginTransactionAsync(ct);
         await _db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
+
+        await DispatchAuditAsync(
+            new PositionUpdatedEvent(
+                position.Id,
+                before,
+                new { position.Id, position.Name, position.Description, position.DepartmentId, position.IsActive },
+                _currentUser?.RequestId),
+            ct);
 
         return await GetByIdAsync(position.Id, ct);
     }
@@ -144,12 +186,31 @@ public class PositionsService : IPositionsService
         var position = await _db.Positions.FirstOrDefaultAsync(p => p.Id == id, ct)
             ?? throw new NotFoundException("Position", id);
 
+        var before = new
+        {
+            position.Id,
+            position.Name,
+            position.Description,
+            position.DepartmentId,
+            position.IsActive,
+            position.IsDeleted
+        };
+
+        await using var tx = await _db.Database.BeginTransactionAsync(ct);
         position.IsDeleted = true;
         position.DeletedAt = DateTime.UtcNow;
 
         await _db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
+
+        await DispatchAuditAsync(
+            new PositionDeletedEvent(position.Id, before, _currentUser?.RequestId),
+            ct);
     }
 
     private static PositionDto MapToDto(Position p) =>
         new(p.Id, p.Name, p.IsActive, p.Description, p.DepartmentId, p.Department?.Name ?? string.Empty, p.CreatedAt, p.UpdatedAt);
+
+    private Task DispatchAuditAsync(IAuditableEvent auditEvent, CancellationToken ct)
+        => _eventDispatcher?.DispatchAsync(auditEvent, ct) ?? Task.CompletedTask;
 }

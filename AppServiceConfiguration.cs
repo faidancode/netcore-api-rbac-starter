@@ -150,11 +150,16 @@ public static class AppServiceConfiguration
                 });
             });
 
-            options.AddFixedWindowLimiter("login", opt =>
+            options.AddPolicy("login", httpContext =>
             {
-                opt.PermitLimit = 5; // login protection
-                opt.Window = TimeSpan.FromMinutes(1);
-                opt.QueueLimit = 0;
+                var clientKey = GetClientPartitionKey(httpContext);
+
+                return RateLimitPartition.GetFixedWindowLimiter(clientKey, _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 5,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0
+                });
             });
         });
 
@@ -193,8 +198,8 @@ public static class AppServiceConfiguration
 
     private static string GetClientPartitionKey(HttpContext context)
     {
-        return context.Connection.RemoteIpAddress?.ToString()
-               ?? context.Request.Headers["X-Forwarded-For"].FirstOrDefault()
+        return context.Request.Headers["X-Forwarded-For"].FirstOrDefault()
+               ?? context.Connection.RemoteIpAddress?.ToString()
                ?? "unknown-ip";
     }
 

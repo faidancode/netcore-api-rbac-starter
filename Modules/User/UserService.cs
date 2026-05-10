@@ -23,21 +23,23 @@ public class UsersService : IUsersService
 {
     private readonly AppDbContext _db;
     private readonly ICurrentUserService? _currentUser;
+    private readonly IEventDispatcher? _eventDispatcher;
 
-    public UsersService(AppDbContext db, ICurrentUserService? currentUser = null)
+    public UsersService(
+        AppDbContext db,
+        ICurrentUserService? currentUser = null,
+        IEventDispatcher? eventDispatcher = null)
     {
         _db = db;
         _currentUser = currentUser;
+        _eventDispatcher = eventDispatcher;
     }
 
     public async Task<UserDto> CreateAsync(CreateUserRequest request, CancellationToken ct)
     {
-        // 🔥 normalize email (prevent logical duplicate)
         var email = request.Email.Trim().ToLowerInvariant();
 
-        // 🔥 parallel validation → reduce DB round trip
         var emailExistsTask = _db.Users.AnyAsync(u => u.Email == email, ct);
-
         var roleExistsTask = request.RoleId.HasValue
             ? _db.Roles.AnyAsync(r => r.Id == request.RoleId.Value, ct)
             : Task.FromResult(true);
@@ -50,19 +52,24 @@ public class UsersService : IUsersService
         if (!roleExistsTask.Result)
             throw new NotFoundException("Role", request.RoleId!.Value);
 
+        await using var tx = await _db.Database.BeginTransactionAsync(ct);
+
         var user = new User
         {
             Name = request.Name,
             Email = email,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password), // 🔐 secure hashing
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
             RoleId = request.RoleId,
             IsActive = request.IsActive
         };
 
         _db.Users.Add(user);
-
-        // ✅ single write → no transaction needed (EF already atomic)
         await _db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
+
+        await DispatchAuditAsync(
+            new UserCreatedEvent(user.Id, user.Name, user.Email, user.RoleId, _currentUser?.RequestId),
+            ct);
 
         return await GetByIdAsync(user.Id, ct);
     }
@@ -72,7 +79,7 @@ public class UsersService : IUsersService
         var term = (query.Search ?? query.Q)?.Trim();
 
         var dbQuery = _db.Users
-            .Include(u => u.Role) // ✅ needed for RoleName in DTO
+            .Include(u => u.Role)
             .AsQueryable();
 
         if (!string.IsNullOrEmpty(term))
@@ -120,7 +127,17 @@ public class UsersService : IUsersService
             .FirstOrDefaultAsync(u => u.Id == id, ct)
             ?? throw new NotFoundException("User", id);
 
-        // 🔥 email update with normalization + correct uniqueness check
+        var before = new
+        {
+            user.Id,
+            user.Name,
+            user.Email,
+            user.IsActive,
+            user.RoleId
+        };
+
+        await using var tx = await _db.Database.BeginTransactionAsync(ct);
+
         if (request.Email != null)
         {
             var email = request.Email.Trim().ToLowerInvariant();
@@ -162,6 +179,15 @@ public class UsersService : IUsersService
         }
 
         await _db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
+
+        await DispatchAuditAsync(
+            new UserUpdatedEvent(
+                user.Id,
+                before,
+                new { user.Id, user.Name, user.Email, user.IsActive, user.RoleId },
+                _currentUser?.RequestId),
+            ct);
 
         return await GetByIdAsync(user.Id, ct);
     }
@@ -172,10 +198,11 @@ public class UsersService : IUsersService
             .FirstOrDefaultAsync(u => u.Id == id, ct)
             ?? throw new NotFoundException("User", id);
 
+        await using var tx = await _db.Database.BeginTransactionAsync(ct);
+
         var isSelfService = _currentUser?.IsAuthenticated == true &&
                             _currentUser.UserId == id;
 
-        // 🔐 self-service must verify current password
         if (isSelfService)
         {
             var currentPassword = request.CurrentPassword?.Trim();
@@ -187,10 +214,14 @@ public class UsersService : IUsersService
             }
         }
 
-        // 💡 assume admin flow handled by permission layer
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
 
         await _db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
+
+        await DispatchAuditAsync(
+            new UserPasswordChangedEvent(user.Id, _currentUser?.RequestId),
+            ct);
     }
 
     public async Task DeleteAsync(Guid id, CancellationToken ct)
@@ -199,10 +230,26 @@ public class UsersService : IUsersService
             .FirstOrDefaultAsync(u => u.Id == id, ct)
             ?? throw new NotFoundException("User", id);
 
+        var before = new
+        {
+            user.Id,
+            user.Name,
+            user.Email,
+            user.IsActive,
+            user.RoleId,
+            user.IsDeleted
+        };
+
+        await using var tx = await _db.Database.BeginTransactionAsync(ct);
         user.IsDeleted = true;
         user.DeletedAt = DateTime.UtcNow;
 
         await _db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
+
+        await DispatchAuditAsync(
+            new UserDeletedEvent(user.Id, before, _currentUser?.RequestId),
+            ct);
     }
 
     private static UserDto MapToDto(User u) => new(
@@ -215,4 +262,7 @@ public class UsersService : IUsersService
         u.CreatedAt,
         u.UpdatedAt
     );
+
+    private Task DispatchAuditAsync(IAuditableEvent auditEvent, CancellationToken ct)
+        => _eventDispatcher?.DispatchAsync(auditEvent, ct) ?? Task.CompletedTask;
 }

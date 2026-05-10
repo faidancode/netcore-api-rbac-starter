@@ -5,6 +5,7 @@ using netcore_api_rbac_starter.Entities;
 using netcore_api_rbac_starter.Data;
 using netcore_api_rbac_starter.Modules.Employees.Dtos;
 using Microsoft.EntityFrameworkCore;
+using netcore_api_rbac_starter.Security;
 
 namespace netcore_api_rbac_starter.Modules.Employees;
 
@@ -18,25 +19,20 @@ public interface IEmployeesService
     Task DeleteAsync(Guid id, CancellationToken ct);
 }
 
-// This class handles the business logic for Employees
-// It inherits from BaseService and implements the IEmployeesService interface for Dependency Injection
 public class EmployeesService : BaseService, IEmployeesService
 {
-    // Local database context variable, marked as readonly for thread-safety and immutability
     private readonly AppDbContext _db;
+    private readonly ICurrentUserService? _currentUser;
 
-    // The Constructor: used to inject the required dependencies (Database and Event Dispatcher)
-    public EmployeesService(AppDbContext db, IEventDispatcher dispatcher)
-        : base(dispatcher) // Passes the 'dispatcher' to the parent BaseService class
+    public EmployeesService(AppDbContext db, IEventDispatcher dispatcher, ICurrentUserService? currentUser = null)
+        : base(dispatcher)
     {
-        _db = db; // Assigns the injected database context to the local field
+        _db = db;
+        _currentUser = currentUser;
     }
 
     public async Task<EmployeeDto> CreateAsync(CreateEmployeeRequest request, CancellationToken ct)
     {
-        // =========================
-        // 1. Pre-check Employee (combine query)
-        // =========================
         var employeeChecks = await _db.Employees
             .Where(e =>
                 e.Nip == request.Nip ||
@@ -51,10 +47,6 @@ public class EmployeesService : BaseService, IEmployeesService
         if (request.UserId.HasValue &&
             employeeChecks.Any(e => e.UserId == request.UserId))
             throw new ConflictException("This user is already linked to another employee.");
-
-        // =========================
-        // 2. Validate required relations
-        // =========================
 
         if (!await _db.Positions.AnyAsync(p => p.Id == request.PositionId, ct))
             throw new NotFoundException("Position", request.PositionId);
@@ -71,9 +63,6 @@ public class EmployeesService : BaseService, IEmployeesService
             !await _db.Users.AnyAsync(u => u.Id == request.UserId.Value, ct))
             throw new NotFoundException("User", request.UserId.Value);
 
-        // =========================
-        // 3. Transaction
-        // =========================
         await using var transaction = await _db.Database.BeginTransactionAsync(ct);
 
         var employee = new Employee
@@ -103,23 +92,13 @@ public class EmployeesService : BaseService, IEmployeesService
         });
 
         await _db.SaveChangesAsync(ct);
-
-        // =========================
-        // 4. Commit FIRST
-        // =========================
         await transaction.CommitAsync(ct);
 
-        // =========================
-        // 5. Dispatch event AFTER commit
-        // =========================
         await DispatchAsync(
-            new EmployeeCreatedEvent(employee.Id, employee.FullName, employee.Nip),
+            new EmployeeCreatedEvent(employee.Id, employee.FullName, employee.Nip, _currentUser?.RequestId),
             ct
         );
 
-        // =========================
-        // 6. Return result
-        // =========================
         return await GetByIdAsync(employee.Id, ct);
     }
 
@@ -158,7 +137,7 @@ public class EmployeesService : BaseService, IEmployeesService
 
         dbQuery = ApplySorting(dbQuery, sortParam);
 
-        var total = await dbQuery.CountAsync(ct); // ✅ cancellation-aware
+        var total = await dbQuery.CountAsync(ct);
 
         var items = await dbQuery
             .ApplyPagination(page, limit)
@@ -217,6 +196,16 @@ public class EmployeesService : BaseService, IEmployeesService
             .FirstOrDefaultAsync(e => e.Id == id, ct)
             ?? throw new NotFoundException("Employee", id);
 
+        var before = new
+        {
+            employee.FullName,
+            employee.Nip,
+            employee.PositionId,
+            employee.DepartmentId,
+            employee.IsActive,
+            employee.UserId
+        };
+
         if (request.Nip != null && request.Nip != employee.Nip)
         {
             if (await _db.Employees.AnyAsync(e => e.Nip == request.Nip && e.Id != id, ct))
@@ -273,14 +262,6 @@ public class EmployeesService : BaseService, IEmployeesService
         if (request.DateOfJoining.HasValue) employee.DateOfJoining = request.DateOfJoining.Value;
         if (request.DateOfActivePosition.HasValue) employee.DateOfActivePosition = request.DateOfActivePosition;
 
-        var before = new
-        {
-            employee.FullName,
-            employee.Nip,
-            employee.PositionId,
-            employee.DepartmentId
-        };
-
         if (positionChanged)
         {
             await using var transaction = await _db.Database.BeginTransactionAsync(ct);
@@ -310,23 +291,30 @@ public class EmployeesService : BaseService, IEmployeesService
 
             await _db.SaveChangesAsync(ct);
             await transaction.CommitAsync(ct);
-
-
-
         }
         else
         {
-            await _db.SaveChangesAsync(ct); // ✅ single atomic write
+            await using var transaction = await _db.Database.BeginTransactionAsync(ct);
+            await _db.SaveChangesAsync(ct);
+            await transaction.CommitAsync(ct);
         }
 
         await DispatchAsync(
-                new EmployeeUpdatedEvent(employee.Id, before, new
+            new EmployeeUpdatedEvent(
+                employee.Id,
+                before,
+                new
                 {
                     employee.FullName,
-                    employee.Nip
-                }),
-                ct
-            );
+                    employee.Nip,
+                    employee.PositionId,
+                    employee.DepartmentId,
+                    employee.IsActive,
+                    employee.UserId
+                },
+                _currentUser?.RequestId),
+            ct
+        );
 
         return await GetByIdAsync(id, ct);
     }
@@ -337,18 +325,30 @@ public class EmployeesService : BaseService, IEmployeesService
             .FirstOrDefaultAsync(e => e.Id == id, ct)
             ?? throw new NotFoundException("Employee", id);
 
+        var before = new
+        {
+            employee.Id,
+            employee.FullName,
+            employee.Nip,
+            employee.PositionId,
+            employee.DepartmentId,
+            employee.IsActive,
+            employee.IsDeleted
+        };
+
+        await using var transaction = await _db.Database.BeginTransactionAsync(ct);
         employee.IsDeleted = true;
         employee.DeletedAt = DateTime.UtcNow;
 
-        await _db.SaveChangesAsync(ct); // ✅ single write → no transaction needed
+        await _db.SaveChangesAsync(ct);
+        await transaction.CommitAsync(ct);
 
         await DispatchAsync(
-                new EmployeeDeletedEvent(employee.Id),
-                ct
-            );
+            new EmployeeDeletedEvent(employee.Id, _currentUser?.RequestId),
+            ct
+        );
     }
 
-    // 🔽 helper tetap sama
     private static IQueryable<Employee> ApplySorting(IQueryable<Employee> q, string? sort)
     {
         return sort switch

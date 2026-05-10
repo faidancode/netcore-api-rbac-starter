@@ -26,7 +26,7 @@ without overengineering.
 ## 3. Request Tracing & Safety
 
 - [x] Request-ID generated at edge (middleware)
-- [ ] Request-ID propagated through context, logs, and async events
+- [x] Request-ID propagated through context, logs, and async events
 - [x] Idempotency-Key for sensitive POST operations
 - [x] Idempotent handling on duplicate requests
 
@@ -71,10 +71,10 @@ without overengineering.
 
 ## 8. Transaction & Data Consistency
 
-- [ ] Database transaction for write operations
-- [ ] Clear transaction boundaries
-- [ ] Rollback on failure
-- [ ] No partial write on error
+- [x] Database transaction for write operations
+- [x] Clear transaction boundaries
+- [x] Rollback on failure
+- [x] No partial write on error
 
 ---
 
@@ -107,11 +107,11 @@ without overengineering.
 
 ## 12. Audit Log (Business Level)
 
-- [ ] Audit log for critical actions
-- [ ] Who performed the action
-- [ ] What action was performed
-- [ ] Timestamp recorded
-- [ ] Before / after state (optional)
+- [x] Audit log for critical actions
+- [x] Who performed the action
+- [x] What action was performed
+- [x] Timestamp recorded
+- [x] Before / after state (optional)
 
 ---
 

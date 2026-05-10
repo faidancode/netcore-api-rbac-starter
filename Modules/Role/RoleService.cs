@@ -6,6 +6,7 @@ using netcore_api_rbac_starter.Common.Models;
 using netcore_api_rbac_starter.Modules.Auth.Dtos;
 using netcore_api_rbac_starter.Modules.Roles.Dtos;
 using Microsoft.EntityFrameworkCore;
+using netcore_api_rbac_starter.Security;
 
 namespace netcore_api_rbac_starter.Modules.Roles;
 
@@ -23,17 +24,23 @@ public interface IRolesService
 public class RolesService : IRolesService
 {
     private readonly AppDbContext _db;
+    private readonly IEventDispatcher? _eventDispatcher;
+    private readonly ICurrentUserService? _currentUser;
 
-    public RolesService(AppDbContext db)
+    public RolesService(
+        AppDbContext db,
+        IEventDispatcher? eventDispatcher = null,
+        ICurrentUserService? currentUser = null)
     {
         _db = db;
+        _eventDispatcher = eventDispatcher;
+        _currentUser = currentUser;
     }
 
     public async Task<RoleDto> CreateAsync(CreateRoleRequest request, CancellationToken ct)
     {
         await using var tx = await _db.Database.BeginTransactionAsync(ct);
 
-        // 🔍 validation
         var exists = await _db.Roles.AnyAsync(r => r.Name == request.Name, ct);
         if (exists)
             throw new ConflictException($"Role '{request.Name}' already exists.");
@@ -47,12 +54,14 @@ public class RolesService : IRolesService
         };
 
         _db.Roles.Add(role);
-
-        // 🔥 no SaveChanges here → wait until all operations done
         await ReplacePermissionsAsync(role.Id, permissionIds, ct);
 
-        await _db.SaveChangesAsync(ct); // ✅ single commit (prevent partial write)
+        await _db.SaveChangesAsync(ct);
         await tx.CommitAsync(ct);
+
+        await DispatchAuditAsync(
+            new RoleCreatedEvent(role.Id, role.Name, role.Description, _currentUser?.RequestId),
+            ct);
 
         return await GetByIdAsync(role.Id, ct);
     }
@@ -122,6 +131,14 @@ public class RolesService : IRolesService
             .FirstOrDefaultAsync(r => r.Id == id, ct)
             ?? throw new NotFoundException("Role", id);
 
+        var before = new
+        {
+            role.Id,
+            role.Name,
+            role.Description,
+            Permissions = role.RolePermissions.Select(rp => rp.PermissionId).ToArray()
+        };
+
         if (request.Name != null && request.Name != role.Name)
         {
             var nameExists = await _db.Roles.AnyAsync(r => r.Name == request.Name, ct);
@@ -138,8 +155,22 @@ public class RolesService : IRolesService
 
         await ReplacePermissionsAsync(role.Id, permissionIds, ct);
 
-        await _db.SaveChangesAsync(ct); // ✅ single commit
+        await _db.SaveChangesAsync(ct);
         await tx.CommitAsync(ct);
+
+        await DispatchAuditAsync(
+            new RoleUpdatedEvent(
+                role.Id,
+                before,
+                new
+                {
+                    role.Id,
+                    role.Name,
+                    role.Description,
+                    Permissions = permissionIds
+                },
+                _currentUser?.RequestId),
+            ct);
 
         return await GetByIdAsync(role.Id, ct);
     }
@@ -153,12 +184,34 @@ public class RolesService : IRolesService
             .FirstOrDefaultAsync(r => r.Id == id, ct)
             ?? throw new NotFoundException("Role", id);
 
+        var before = new
+        {
+            role.Id,
+            role.Name,
+            role.Description,
+            Permissions = role.RolePermissions.Select(rp => rp.PermissionId).ToArray()
+        };
+
         var permissionIds = await NormalizeAndValidatePermissionIdsAsync(request.PermissionIds, ct);
 
         await ReplacePermissionsAsync(role.Id, permissionIds, ct);
 
         await _db.SaveChangesAsync(ct);
         await tx.CommitAsync(ct);
+
+        await DispatchAuditAsync(
+            new RolePermissionsAssignedEvent(
+                role.Id,
+                before,
+                new
+                {
+                    role.Id,
+                    role.Name,
+                    role.Description,
+                    Permissions = permissionIds
+                },
+                _currentUser?.RequestId),
+            ct);
 
         return await GetByIdAsync(id, ct);
     }
@@ -169,13 +222,26 @@ public class RolesService : IRolesService
             .FirstOrDefaultAsync(r => r.Id == id, ct)
             ?? throw new NotFoundException("Role", id);
 
+        var before = new
+        {
+            role.Id,
+            role.Name,
+            role.Description,
+            role.IsDeleted
+        };
+
+        await using var tx = await _db.Database.BeginTransactionAsync(ct);
         role.IsDeleted = true;
         role.DeletedAt = DateTime.UtcNow;
 
-        await _db.SaveChangesAsync(ct); // ✅ single write → no transaction needed
+        await _db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
+
+        await DispatchAuditAsync(
+            new RoleDeletedEvent(role.Id, before, _currentUser?.RequestId),
+            ct);
     }
 
-    // 🔥 Validate permission IDs (no unnecessary data load)
     private async Task<List<Guid>> NormalizeAndValidatePermissionIdsAsync(
         IEnumerable<Guid> permissionIds,
         CancellationToken ct)
@@ -196,7 +262,6 @@ public class RolesService : IRolesService
         return distinctIds;
     }
 
-    // 🔥 Replace role-permissions efficiently
     private async Task ReplacePermissionsAsync(
         Guid roleId,
         IReadOnlyCollection<Guid> permissionIds,
@@ -204,8 +269,6 @@ public class RolesService : IRolesService
     {
         var rolePermissions = _db.RolePermissions.Where(rp => rp.RoleId == roleId);
 
-        // InMemory and some non-relational providers do not support ExecuteDeleteAsync.
-        // Fall back to tracked removal so unit tests can run against lightweight providers.
         if (_db.Database.IsRelational())
         {
             await rolePermissions.ExecuteDeleteAsync(ct);
@@ -241,4 +304,7 @@ public class RolesService : IRolesService
         r.CreatedAt,
         r.UpdatedAt
     );
+
+    private Task DispatchAuditAsync(IAuditableEvent auditEvent, CancellationToken ct)
+        => _eventDispatcher?.DispatchAsync(auditEvent, ct) ?? Task.CompletedTask;
 }
