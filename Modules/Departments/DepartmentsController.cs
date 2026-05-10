@@ -34,7 +34,7 @@ public class DepartmentsController : ControllerBase
         var result = await _service.GetAllAsync(query, ct);
         return Ok(Response<IEnumerable<DepartmentDto>>.Ok(
             result.Items,
-            meta: PaginationMeta.Create(query.Page, query.Limit, result.Total)
+            meta: PaginationMeta.Create(result.Page, result.Limit, result.Total)
         ));
     }
 

@@ -198,6 +198,7 @@ public class DepartmentValidatorTests
 {
     private readonly CreateDepartmentRequestValidator _createValidator = new();
     private readonly UpdateDepartmentRequestValidator _updateValidator = new();
+    private readonly DepartmentListQueryValidator _listValidator = new();
 
     [Fact]
     public void Create_ValidRequest_PassesValidation()
@@ -254,5 +255,33 @@ public class DepartmentValidatorTests
         var description = new string('D', 251);
         var result = _updateValidator.TestValidate(new UpdateDepartmentRequest(null, description, null));
         result.ShouldHaveValidationErrorFor(x => x.Description);
+    }
+
+    [Fact]
+    public void List_DefaultQuery_PassesValidation()
+    {
+        var result = _listValidator.TestValidate(new ListDepartmentQuery());
+        result.ShouldNotHaveAnyValidationErrors();
+    }
+
+    [Fact]
+    public void List_PageZero_FailsValidation()
+    {
+        var result = _listValidator.TestValidate(new ListDepartmentQuery(Page: 0));
+        result.ShouldHaveValidationErrorFor(x => x.Page);
+    }
+
+    [Fact]
+    public void List_LimitAboveBoundary_FailsValidation()
+    {
+        var result = _listValidator.TestValidate(new ListDepartmentQuery(Limit: 101));
+        result.ShouldHaveValidationErrorFor(x => x.Limit);
+    }
+
+    [Fact]
+    public void List_InvalidSort_FailsValidation()
+    {
+        var result = _listValidator.TestValidate(new ListDepartmentQuery(Sort: "name-up"));
+        result.ShouldHaveValidationErrorFor(x => x.Sort);
     }
 }
