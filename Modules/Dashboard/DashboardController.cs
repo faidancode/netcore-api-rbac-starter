@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using netcore_api_rbac_starter.Common.Models;
 using netcore_api_rbac_starter.Modules.Dashboard.Dtos;
 
@@ -8,6 +9,7 @@ namespace netcore_api_rbac_starter.Modules.Dashboard;
 [ApiController]
 [Route("api/v{version:apiVersion}/dashboard")]
 [Authorize]
+[EnableRateLimiting("per-user")]
 [Produces("application/json")]
 public class DashboardController : ControllerBase
 {

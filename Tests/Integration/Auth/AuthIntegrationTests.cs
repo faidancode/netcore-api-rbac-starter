@@ -34,6 +34,23 @@ public class AuthIntegrationTests : IClassFixture<ApiFactory>
     }
 
     [Fact]
+    public async Task Login_ValidCredentials_SetsHttpOnlyRefreshCookie()
+    {
+        var client = _factory.CreateAnonClient();
+
+        var response = await client.PostAsJsonAsync("/api/v1/auth/login",
+            new { email = "admin@example.com", password = "Admin@123" });
+
+        response.Headers.TryGetValues("Set-Cookie", out var cookieHeaders).Should().BeTrue();
+        var setCookie = cookieHeaders!.FirstOrDefault(h => h.StartsWith("refresh_token=", StringComparison.OrdinalIgnoreCase));
+
+        setCookie.Should().NotBeNullOrEmpty();
+
+        setCookie!.ToLowerInvariant().Should().Contain("httponly");
+        setCookie.ToLowerInvariant().Should().Contain("secure");
+    }
+
+    [Fact]
     public async Task Login_WrongPassword_Returns401()
     {
         var client = _factory.CreateAnonClient();
@@ -89,6 +106,31 @@ public class AuthIntegrationTests : IClassFixture<ApiFactory>
         body.Data.RefreshToken.Should().NotBeNullOrEmpty();
         // Tokens should rotate
         body.Data.RefreshToken.Should().NotBe(refreshToken);
+    }
+
+    [Fact]
+    public async Task Refresh_WhenBodyIsEmpty_UsesRefreshCookie()
+    {
+        var client = _factory.CreateAnonClient();
+
+        var loginResp = await client.PostAsJsonAsync("/api/v1/auth/login",
+            new { email = "admin@example.com", password = "Admin@123" });
+
+        loginResp.Headers.TryGetValues("Set-Cookie", out var cookieHeaders).Should().BeTrue();
+        var setCookie = cookieHeaders!
+            .First(h => h.StartsWith("refresh_token=", StringComparison.OrdinalIgnoreCase));
+        var cookieHeader = setCookie.Split(';', 2)[0];
+
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/auth/refresh");
+        request.Headers.Add("Cookie", cookieHeader);
+        request.Content = JsonContent.Create(new { refreshToken = "" });
+
+        var response = await client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<Response<LoginResponse>>();
+        body!.Data!.AccessToken.Should().NotBeNullOrEmpty();
+        body.Data.RefreshToken.Should().NotBeNullOrEmpty();
     }
 
     [Fact]

@@ -22,23 +22,23 @@ This document tracks the current implementation status against `docs/checklist.m
 - `/health` and `/ready` endpoints are available, including database and Redis checks.
 - Swagger/OpenAPI and a Postman collection are available.
 - Unit and integration tests exist for auth, roles, users, employees, departments, positions, and dashboard.
+- Secure refresh-token cookie support is in place, while still keeping the body-based flow for compatibility.
+- Rate limiting is enforced per IP globally, per authenticated user on protected routes, and per-login for sensitive auth requests.
+- A global request timeout is configured through middleware and can be tuned via `RequestTimeoutSeconds`.
+- Documentation now includes request/response examples, auth instructions, and a basic error-code reference.
 
 ### Partially Implemented
 
 - Request IDs are logged, but they are not yet propagated through external async/event systems because event processing is still in-process.
 - Audit logging exists, but it is currently concentrated on employee-related events instead of every critical business action.
 - Transaction boundaries are solid in some services, but not yet standardized across every write operation.
-- Cancellation tokens are used broadly, but there is no global HTTP timeout policy yet.
-- Rate limiting exists for global traffic and login, but not yet at per-IP and per-user granularity.
 - Deployment readiness is helped by Docker and Compose files, but port/env handling can still be tightened further.
 
 ### Not Implemented
 
-- Secure refresh token storage via `HttpOnly`/`Secure` cookies.
 - Async/Kafka-style event processing with event IDs, broker headers, consumer idempotency, and replay safety.
-- Per-IP and per-authenticated-user rate limiting policies.
 - Audit logs for all critical business actions across every module.
-- A fully documented error code catalog and request/response example set in the docs.
+- A complete endpoint-by-endpoint request/response example catalog and exhaustive error-code reference.
 
 ## Phased Plan
 

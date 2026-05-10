@@ -14,6 +14,9 @@ public static class AppPipeline
         // 2. Exception handling (wrap semua setelah ini)
         app.UseMiddleware<ExceptionMiddleware>();
 
+        // 3. Global timeout to stop runaway requests early
+        app.UseMiddleware<RequestTimeoutMiddleware>();
+
         if (app.Environment.IsDevelopment())
         {
             app.MapOpenApi();
@@ -32,9 +35,6 @@ public static class AppPipeline
 
         app.UseCors("AngularApp");
 
-        app.UseRateLimiter();
-
-        // 3. Auth dulu
         app.UseAuthentication();
         app.UseAuthorization();
 
@@ -47,7 +47,10 @@ public static class AppPipeline
             app.UseSerilogRequestLogging();
         }
 
-        // 6. Idempotency (butuh user + requestId)
+        // 6. Rate limiting setelah auth supaya policy berbasis user bisa bekerja
+        app.UseRateLimiter();
+
+        // 7. Idempotency (butuh user + requestId)
         app.UseMiddleware<IdempotencyMiddleware>();
 
         app.MapControllers();

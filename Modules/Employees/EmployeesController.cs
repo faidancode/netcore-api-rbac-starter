@@ -3,12 +3,14 @@ using netcore_api_rbac_starter.Modules.Employees.Dtos;
 using netcore_api_rbac_starter.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace netcore_api_rbac_starter.Modules.Employees;
 
 [ApiController]
 [Route("api/v{version:apiVersion}/employees")]
 [Authorize]
+[EnableRateLimiting("per-user")]
 [Produces("application/json")]
 public class EmployeesController : ControllerBase
 {

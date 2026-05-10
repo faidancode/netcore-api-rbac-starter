@@ -3,12 +3,14 @@ using netcore_api_rbac_starter.Modules.Departments.Dtos;
 using netcore_api_rbac_starter.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace netcore_api_rbac_starter.Modules.Departments;
 
 [ApiController]
 [Route("api/v{version:apiVersion}/departments")]
 [Authorize]
+[EnableRateLimiting("per-user")]
 [Produces("application/json")]
 public class DepartmentsController : ControllerBase
 {

@@ -4,12 +4,14 @@ using netcore_api_rbac_starter.Modules.Roles.Dtos;
 using netcore_api_rbac_starter.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace netcore_api_rbac_starter.Modules.Roles;
 
 [ApiController]
 [Route("api/v{version:apiVersion}/roles")]
 [Authorize]
+[EnableRateLimiting("per-user")]
 [Produces("application/json")]
 public class RolesController : ControllerBase
 {

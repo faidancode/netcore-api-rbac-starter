@@ -18,6 +18,8 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Mvc;
 using netcore_api_rbac_starter.Common.Models;
 using System.Text.Json.Serialization;
+using System.Security.Claims;
+using System.Threading.RateLimiting;
 
 namespace netcore_api_rbac_starter;
 
@@ -114,16 +116,43 @@ public static class AppServiceConfiguration
 
         services.AddRateLimiter(options =>
         {
-            options.AddFixedWindowLimiter("global", opt =>
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+            options.OnRejected = async (context, cancellationToken) =>
             {
-                opt.PermitLimit = 100; // 100 request
-                opt.Window = TimeSpan.FromMinutes(1);
-                opt.QueueLimit = 0;
+                context.HttpContext.Response.ContentType = "application/json";
+                context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+                await context.HttpContext.Response.WriteAsJsonAsync(
+                    Response<object>.Fail("Too many requests.", code: "RATE_LIMITED"),
+                    cancellationToken);
+            };
+
+            options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+            {
+                var clientKey = GetClientPartitionKey(httpContext);
+
+                return RateLimitPartition.GetFixedWindowLimiter(clientKey, _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 300,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0
+                });
+            });
+
+            options.AddPolicy("per-user", httpContext =>
+            {
+                var userKey = GetUserPartitionKey(httpContext);
+
+                return RateLimitPartition.GetFixedWindowLimiter(userKey, _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 120,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0
+                });
             });
 
             options.AddFixedWindowLimiter("login", opt =>
             {
-                opt.PermitLimit = 5; // 5 request
+                opt.PermitLimit = 5; // login protection
                 opt.Window = TimeSpan.FromMinutes(1);
                 opt.QueueLimit = 0;
             });
@@ -160,5 +189,19 @@ public static class AppServiceConfiguration
         services.AddHealthChecks().AddDbContextCheck<AppDbContext>("database").AddRedis("localhost:6381", name: "redis");
 
         return builder;
+    }
+
+    private static string GetClientPartitionKey(HttpContext context)
+    {
+        return context.Connection.RemoteIpAddress?.ToString()
+               ?? context.Request.Headers["X-Forwarded-For"].FirstOrDefault()
+               ?? "unknown-ip";
+    }
+
+    private static string GetUserPartitionKey(HttpContext context)
+    {
+        return context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+               ?? context.User.FindFirst("sub")?.Value
+               ?? GetClientPartitionKey(context);
     }
 }

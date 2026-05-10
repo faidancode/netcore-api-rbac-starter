@@ -112,16 +112,30 @@ public class EmployeesIntegrationTests : IClassFixture<ApiFactory>
             DepartmentId: EntityBuilder.EngineeringId
         );
 
-        // Tambahkan header Idempotency-Key
-        client.DefaultRequestHeaders.Add("Idempotency-Key", idempotencyKey);
-
         // Act 1: Request Pertama
-        var response1 = await client.PostAsJsonAsync("/api/v1/employees", req);
+        using var request1 = new HttpRequestMessage(HttpMethod.Post, "/api/v1/employees")
+        {
+            Content = JsonContent.Create(req)
+        };
+        request1.Headers.Add("Idempotency-Key", idempotencyKey);
+
+        var response1 = await client.SendAsync(request1);
+        if (response1.StatusCode != HttpStatusCode.Created)
+        {
+            var errorBody = await response1.Content.ReadAsStringAsync();
+            throw new Exception($"Request 1 failed with {response1.StatusCode}: {errorBody}");
+        }
         response1.StatusCode.Should().Be(HttpStatusCode.Created);
         var body1 = await response1.Content.ReadAsStringAsync();
 
         // Act 2: Request Kedua dengan Key yang sama
-        var response2 = await client.PostAsJsonAsync("/api/v1/employees", req);
+        using var request2 = new HttpRequestMessage(HttpMethod.Post, "/api/v1/employees")
+        {
+            Content = JsonContent.Create(req)
+        };
+        request2.Headers.Add("Idempotency-Key", idempotencyKey);
+
+        var response2 = await client.SendAsync(request2);
         var body2 = await response2.Content.ReadAsStringAsync();
 
         // Assert
@@ -168,6 +182,18 @@ public class EmployeesIntegrationTests : IClassFixture<ApiFactory>
         // Assert
         res1.StatusCode.Should().Be(HttpStatusCode.Created);
         res2.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var body1 = await res1.Content.ReadAsStringAsync();
+        var body2 = await res2.Content.ReadAsStringAsync();
+        body1.Should().NotBeEmpty();
+        body2.Should().NotBeEmpty();
+        body1.Should().NotBe(body2);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        (await db.Employees.CountAsync(e => e.Nip == "NIP-A")).Should().Be(1);
+        (await db.Employees.CountAsync(e => e.Nip == "NIP-B")).Should().Be(1);
     }
 
     // ── GET /api/v1/employees ──────────────────────────────────────────────────────

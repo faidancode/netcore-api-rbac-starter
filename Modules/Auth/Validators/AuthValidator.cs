@@ -21,6 +21,7 @@ public class RefreshRequestValidator : AbstractValidator<RefreshRequest>
     public RefreshRequestValidator()
     {
         RuleFor(x => x.RefreshToken)
-            .NotEmpty().WithMessage("Refresh token is required.");
+            .MaximumLength(4096)
+            .When(x => !string.IsNullOrWhiteSpace(x.RefreshToken));
     }
 }

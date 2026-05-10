@@ -48,9 +48,9 @@ public class AuthValidatorTests
     }
 
     [Fact]
-    public void Refresh_EmptyToken_FailsValidation()
+    public void Refresh_EmptyToken_AllowsCookieFallback()
     {
         var result = _refreshValidator.TestValidate(new RefreshRequest(""));
-        result.ShouldHaveValidationErrorFor(x => x.RefreshToken);
+        result.ShouldNotHaveAnyValidationErrors();
     }
 }

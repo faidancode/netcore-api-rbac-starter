@@ -19,7 +19,7 @@ without overengineering.
 - [x] Role-based authorization (RBAC)
 - [x] Token expiration handling
 - [x] Refresh token mechanism
-- [ ] Secure cookie / header usage (HttpOnly, Secure)
+- [x] Secure cookie / header usage (HttpOnly, Secure)
 
 ---
 
@@ -90,15 +90,15 @@ without overengineering.
 
 ## 10. Rate Limiting & Abuse Protection
 
-- [ ] Rate limit per IP
-- [ ] Rate limit per authenticated user
-- [ ] Protection for sensitive endpoints (login, checkout)
+- [x] Rate limit per IP
+- [x] Rate limit per authenticated user
+- [x] Protection for sensitive endpoints (login, checkout)
 
 ---
 
 ## 11. Timeout & Context Propagation
 
-- [ ] HTTP request has timeout
+- [x] HTTP request has timeout
 - [x] Context propagated to service and repository
 - [x] Database queries respect context
 - [x] Async operations respect cancellation
